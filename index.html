@@ -339,17 +339,8 @@
     margin:0 auto;
     box-shadow:0 6px 20px rgba(50,72,60,.10);
   }
-  .price-table-wrap{
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    border-top:1px solid var(--line);
-  }
-  .price-table{
-    width:100%;
-    border-collapse:collapse;
-    min-width:560px;
-    font-size:.85rem;
-  }
+  .price-table-wrap{border-top:1px solid var(--line);}
+  .price-table{width:100%;border-collapse:collapse;font-size:.88rem;}
   .price-table th, .price-table td{
     padding:12px 14px;
     border-bottom:1px solid var(--line);
@@ -364,23 +355,33 @@
     font-weight:600;
     white-space:nowrap;
   }
-  .price-table td:first-child, .price-table th:first-child{
-    position:sticky;
-    left:0;
-    background:var(--paper);
-    min-width:190px;
-    font-weight:600;
-    box-shadow:1px 0 0 var(--line);
-  }
-  .price-table thead th:first-child{background:var(--deep);}
+  .price-table td:first-child{font-weight:600;}
   .price-table tbody tr:last-child td{font-weight:600;background:var(--cream);}
-  .price-table tbody tr:last-child td:first-child{background:var(--cream);}
   .price-table .tax{display:block;font-size:.76rem;color:var(--green);margin-top:2px;font-weight:400;}
-  .price-table-hint{
-    font-size:.76rem;
-    color:var(--green);
-    text-align:right;
-    padding:6px 24px 0;
+
+  @media (max-width:599px){
+    .price-table thead{display:none;}
+    .price-table, .price-table tbody, .price-table tr, .price-table td{display:block;width:100%;}
+    .price-table tr{padding:14px 18px;border-bottom:1px solid var(--line);}
+    .price-table td, .price-table tbody tr:last-child td{border:0;padding:0;background:transparent;}
+    .price-table td:first-child{margin-bottom:8px;}
+    .price-table tbody tr:last-child{background:var(--cream);}
+    .price-table td[data-label]{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:12px;
+      padding:4px 0;
+    }
+    .price-table td[data-label]::before{
+      content:attr(data-label);
+      font-size:.78rem;
+      font-weight:400;
+      color:var(--green);
+      flex-shrink:0;
+    }
+    .price-table td[data-label] .v{text-align:right;}
+    .price-table .tax{display:inline;margin-left:6px;}
   }
   .price-card .price-foot{
     padding:20px 24px 26px;
@@ -798,53 +799,52 @@
           <tbody>
             <tr>
               <td>A. スムースチワワ、スムースダックス、ミニチュアピンシャー</td>
-              <td>¥3,400<span class="tax">(¥3,740)</span></td>
-              <td>—</td>
+              <td data-label="シャンプーセット"><span class="v">¥3,400<span class="tax">(¥3,740)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">—</span></td>
             </tr>
             <tr>
               <td>B. ロングチワワ、ロングダックス、ヨークシャテリア、マルチーズ</td>
-              <td>¥4,500<span class="tax">(¥4,950)</span></td>
-              <td>¥6,400<span class="tax">(¥7,040)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥4,500<span class="tax">(¥4,950)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥6,400<span class="tax">(¥7,040)</span></span></td>
             </tr>
             <tr>
               <td>C. シーズー、ポメラニアン、パグ、ジャックラッセルテリア、パピヨン、狆</td>
-              <td>¥5,700<span class="tax">(¥6,270)</span></td>
-              <td>¥7,600<span class="tax">(¥8,360)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥5,700<span class="tax">(¥6,270)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥7,600<span class="tax">(¥8,360)</span></span></td>
             </tr>
             <tr>
               <td>D. ペキニーズ、ボストンテリア、フレンチブルドッグ</td>
-              <td>¥5,900<span class="tax">(¥6,490)</span></td>
-              <td>¥7,600<span class="tax">(¥8,360)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥5,900<span class="tax">(¥6,490)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥7,600<span class="tax">(¥8,360)</span></span></td>
             </tr>
             <tr>
               <td>E. キャバリア、Mシュナウザー、スコッチ</td>
-              <td>¥6,000<span class="tax">(¥6,600)</span></td>
-              <td>¥7,700<span class="tax">(¥8,470)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥6,000<span class="tax">(¥6,600)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥7,700<span class="tax">(¥8,470)</span></span></td>
             </tr>
             <tr>
               <td>F. トイプードル</td>
-              <td>¥6,000<span class="tax">(¥6,600)</span></td>
-              <td>¥8,000<span class="tax">(¥8,800)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥6,000<span class="tax">(¥6,600)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥8,000<span class="tax">(¥8,800)</span></span></td>
             </tr>
             <tr>
               <td>G. ビションフリーゼ</td>
-              <td>¥7,000<span class="tax">(¥7,700)</span></td>
-              <td>¥10,000<span class="tax">(¥11,000)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥7,000<span class="tax">(¥7,700)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥10,000<span class="tax">(¥11,000)</span></span></td>
             </tr>
             <tr>
               <td>H. アメコカ、Eコカ、柴、コーギー</td>
-              <td>¥6,400<span class="tax">(¥7,040)</span></td>
-              <td>¥9,400<span class="tax">(¥10,340)</span></td>
+              <td data-label="シャンプーセット"><span class="v">¥6,400<span class="tax">(¥7,040)</span></span></td>
+              <td data-label="シャンプーカット"><span class="v">¥9,400<span class="tax">(¥10,340)</span></span></td>
             </tr>
             <tr>
               <td>シャンプー＋顔・耳カット</td>
-              <td>+¥1,100<span class="tax">(¥1,210)</span></td>
-              <td>部分カット 一部分¥600<span class="tax">(¥660)</span></td>
+              <td data-label="追加料金"><span class="v">+¥1,100<span class="tax">(¥1,210)</span></span></td>
+              <td><span class="v">部分カット 一部分¥600<span class="tax">(¥660)</span></span></td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p class="price-table-hint">→ 横にスクロールできます</p>
       <div class="price-foot">
         <div class="price-note">
           <span class="paw">
