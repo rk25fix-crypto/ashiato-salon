@@ -58,7 +58,7 @@
 
 共通:
 - レスポンスは `Content-Type: application/json`。
-- CORS の `Access-Control-Allow-Origin` は `https://rk25fix-crypto.github.io` 固定。`OPTIONS` にも同じヘッダで200。
+- CORS の `Access-Control-Allow-Origin` は `https://ashiato-salon.pages.dev` 固定(`worker/src/lib.js` の `SITE_ORIGIN`)。`OPTIONS` にも同じヘッダで200。
 - 認証が必要なエンドポイントは `Authorization: Bearer <token>`。不正・期限切れは `401 {"error":"もう一度ログインしてください"}`。
 
 ### POST /login
@@ -74,7 +74,7 @@ Request `{ "password": string }`
 
 - GitHub API から常に最新の `data/content.json` を取得して返す(Pages の反映待ちの影響を受けないため)。読み方は POST /save の手順1〜2と同じ(main の最新コミットに固定して読む)。
 - `200 { "content": {...content.json...}, "previewHtml": string }`
-- `previewHtml` = テンプレートを `annotate: true` で描画し、`<head>` の直後(`<head>` が無ければ先頭)に `<base href="https://rk25fix-crypto.github.io/ashiato-salon/">` を入れたもの(`<!DOCTYPE>` より前に置くと quirks mode になるため)。`content.images` の画像は **最新コミットのSHAを使った raw URL**(`https://raw.githubusercontent.com/rk25fix-crypto/ashiato-salon/<commitSha>/images/hero.jpg`)にする(保存直後でも必ず新しい画像が出るように)。編集対象外の画像(ロゴ・QR)は相対パスのまま `<base>` で Pages から読む。
+- `previewHtml` = テンプレートを `annotate: true` で描画し、`<head>` の直後(`<head>` が無ければ先頭)に `<base href="https://ashiato-salon.pages.dev/">` を入れたもの(`<!DOCTYPE>` より前に置くと quirks mode になるため)。`content.images` の画像は **最新コミットのSHAを使った raw URL**(`https://raw.githubusercontent.com/rk25fix-crypto/ashiato-salon/<commitSha>/images/hero.jpg`)にする(保存直後でも必ず新しい画像が出るように)。編集対象外の画像(ロゴ・QR)は相対パスのまま `<base>` で Pages から読む。
 - **自己修復**: 同じコミットの content.json から作った公開用 index.html(POST /save の手順4と同じ作り方)の git blob sha と、そのコミットのツリーにある `index.html` の blob sha を比べ、違っていれば `index.html` だけを POST /save の手順5〜6と同じ仕組みで1コミットで書き直す(content.json やテンプレートを手で直して index.html を作り直し忘れた場合などに、公開サイトだけ古いまま固定されるのを防ぐ)。親は読んだコミットに固定して再試行しない(保存が割り込んでいたら ref の更新が fast-forward にならず 422 で諦め、古い内容で上書きしない)。修復に失敗しても GET 自体は 200 を返す(ログのみ)。
 - GitHub が 401(トークン失効など) `502 { "error": "更新に失敗しました。管理者に連絡してください" }`。管理画面を開いた時点でこの文言が出る。
 
@@ -92,7 +92,7 @@ Request `{ "password": string }`
 - image: キーが現在の `content.images` に存在すること。`dataUrl` の base64 部分が正しい base64 であること(使える文字は `A-Z a-z 0-9 + /`、`=` は末尾の1〜2文字だけ、長さは4の倍数。改行・空白は不可) → `{"error":"不正なリクエストです"}`。先頭バイトが JPEG(`FF D8 FF`)であること。デコード後のサイズが1MB(1024×1024バイト)以下 → 超過は `{"error":"写真のサイズが大きすぎます"}`。保存先パスは `content.images[key]` を使い、クライアントからパスは受け取らない。
 - 写真は **base64 のまま扱い、全体をデコードしない**(Cloudflare 無料プランの CPU 時間 10ms/リクエストに収めるため)。JPEG の確認は先頭4文字だけデコードし、サイズは base64 の長さとパディングから計算する(`長さ÷4×3 − '=' の数`)。GitHub にはクライアントから来た base64 文字列をそのまま渡す。
 
-処理(GitHub Git Data API で **1回の保存 = 1コミット**。GitHub Pages のビルドは1回で済み、途中まで書いて止まることもない):
+処理(GitHub Git Data API で **1回の保存 = 1コミット**。Cloudflare Pages のビルドは1回で済み、途中まで書いて止まることもない):
 1. `GET /git/ref/heads/main` で main の最新コミット C を得る。
 2. 並行して `GET /git/commits/C`(C のツリー SHA)と `GET /contents/data/content.json?ref=C`(`Accept: application/vnd.github.raw+json`。中身をそのまま返し、1MB 制限を受けない)。続けて `GET /git/trees/<ツリー SHA>?recursive=1` で全ファイルの blob sha を得る。(`/git/trees/C` でも一覧は取れるが、応答の `sha` がツリーではなくコミットの SHA になり `base_tree` に使えないため、ツリー SHA は `/git/commits` から取る)。この content.json に対してキーを検証し、値を適用する。
 3. (image のみ)`POST /git/blobs`(`{ content: <クライアントの base64>, encoding: "base64" }`)で blob を作り、sha を得る。

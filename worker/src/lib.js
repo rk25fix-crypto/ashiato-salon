@@ -14,9 +14,11 @@ import { renderTemplate } from '../render.js';
 const GITHUB_OWNER = 'rk25fix-crypto';
 const GITHUB_REPO = 'ashiato-salon';
 const GITHUB_BRANCH = 'main';
-const ALLOWED_ORIGIN = 'https://rk25fix-crypto.github.io';
+// 公開サイト(Cloudflare Pages)。管理画面もここから配信されるので、CORS はこのオリジンだけを許可する
+const SITE_ORIGIN = 'https://ashiato-salon.pages.dev';
+const ALLOWED_ORIGIN = SITE_ORIGIN;
 const GITHUB_API = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
-const PAGES_BASE = `https://${GITHUB_OWNER}.github.io/${GITHUB_REPO}/`;
+const PAGES_BASE = `${SITE_ORIGIN}/`;
 const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
 const CONTENT_PATH = 'data/content.json';
 const INDEX_PATH = 'index.html';

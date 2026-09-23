@@ -13,7 +13,7 @@ import { buildIndex, gitBlobSha } from './build-index.js';
 const ENV = { ADMIN_PASSWORD: 'correct-horse-battery', GITHUB_TOKEN: 'gh-token', SESSION_SECRET: 'session-secret' };
 const API = 'https://api.github.com/repos/rk25fix-crypto/ashiato-salon';
 const RAW = 'https://raw.githubusercontent.com/rk25fix-crypto/ashiato-salon';
-const BASE_TAG = '<base href="https://rk25fix-crypto.github.io/ashiato-salon/">';
+const BASE_TAG = '<base href="https://ashiato-salon.pages.dev/">';
 
 const TEMPLATE =
   '<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>{{plain:site.title}}</title></head><body>' +
@@ -209,7 +209,7 @@ async function main() {
   await check('正しいパスワードで200、token と 約30日後の expiresAt が返る', async () => {
     const res = await handleLogin(req('POST', '/login', { password: ENV.ADMIN_PASSWORD }, { 'CF-Connecting-IP': '10.0.0.1' }), ENV);
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.headers.get('Access-Control-Allow-Origin'), 'https://rk25fix-crypto.github.io');
+    assert.strictEqual(res.headers.get('Access-Control-Allow-Origin'), 'https://ashiato-salon.pages.dev');
     const body = await res.json();
     assert.ok(await verifyToken(ENV, body.token));
     const days = (body.expiresAt - Date.now()) / 86400000;

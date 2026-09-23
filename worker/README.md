@@ -4,8 +4,8 @@
 **パスワード確認**と **GitHub への保存(コミット)** だけを行う中継役です。
 仕様は [API.md](./API.md) が唯一の正です。
 
-- 保存するたびに、変更したファイル(文章なら `data/content.json` と `index.html`、写真なら写真ファイルと `index.html`)が **1回の保存につき1コミット** で GitHub の main ブランチに記録され、GitHub Pages が数分で公開します。
-  (GitHub Pages のビルドは「1時間に10回程度」が目安なので、短時間に何十回も保存し続けると反映が遅れることがあります)
+- 保存するたびに、変更したファイル(文章なら `data/content.json` と `index.html`、写真なら写真ファイルと `index.html`)が **1回の保存につき1コミット** で GitHub の main ブランチに記録され、Cloudflare Pages が数分で公開します。
+  (Cloudflare Pages の無料プランのビルドは月500回まで。1回の保存=1ビルドです)
 - 編集できる項目は `data/content.json` にあるキーそのものです。項目を増やす時は、テンプレートと content.json にキーを足すだけで Worker の修正は不要です(ただしテンプレートを変えたら再デプロイが必要。下の 8 を参照)。
 
 以下のコマンドは **PowerShell** で、このリポジトリの `worker` フォルダに移動してから実行します。
@@ -27,7 +27,7 @@ Worker を使う前に、テンプレートから生成した新形式(約42KB�
    (画像の URL に `?v=<git の blob sha>` が付きます。Worker が保存時に作るものと同じ形式です)
 3. もう一度 `node worker/verify-migration.js`(新形式として検証され、「8. index.html が build-index.js の出力と一致」も OK になること)
 4. `index.html`, `index.template.html`, `data/`, `images/`, `admin/` をコミットして main に push
-5. 数分後に公開サイト <https://rk25fix-crypto.github.io/ashiato-salon/> を開き、文章・料金表・写真・ロゴ・QR が
+5. 数分後に公開サイト <https://ashiato-salon.pages.dev/> を開き、文章・料金表・写真・ロゴ・QR が
    以前と同じに表示されることを確認する(スマホでも)
 6. 確認できてから、下の 1〜6 で Worker を用意して使い始める
 
@@ -39,7 +39,7 @@ Worker を使う前に、テンプレートから生成した新形式(約42KB�
 1. `rk25fix-crypto` アカウントで GitHub にログインし、<https://github.com/settings/personal-access-tokens/new> を開く
 2. 次のように設定する
    - **Token name**: `ashiato-salon-worker`(何でもよい)
-   - **Expiration**: `Custom` で **1年後**(推奨。無期限にはしない)
+   - **Expiration**: `Custom` で **1年後**、または無期限(`No expiration`)。無期限にする場合は、GitHub と Cloudflare の両方で2段階認証を必ず有効にし、トークンを他の場所に保存しないこと(漏れた時は下の 7 の手順で無効化・再発行する)
    - **Resource owner**: `rk25fix-crypto`
    - **Repository access**: `Only select repositories` → **`ashiato-salon` だけ**を選ぶ
    - **Permissions** → Repository permissions → **Contents: `Read and write`**(これ以外は触らない。`Metadata: Read-only` は自動で付くのでそのままでよい)
@@ -167,16 +167,15 @@ GitHub のトークンは発行から1年で失効します。失効すると、
 
 再デプロイは不要です。
 
-## セキュリティ上の注意: このGitHubアカウントの Pages に他のサイトを置かない
+## セキュリティ上の注意: 公開先のオリジン
 
 管理画面のログイン情報(トークン)の保存場所と、Worker の CORS の許可は、
-`https://rk25fix-crypto.github.io` という**オリジン単位**です(`/ashiato-salon/` というパス単位ではありません)。
-そのため、**同じ `rk25fix-crypto` アカウントの GitHub Pages に他のサイト(別リポジトリ)を置くと、
-そのサイトのスクリプトからもトークンが読め、Worker を呼んでホームページを書き換えられてしまいます**。
+`https://ashiato-salon.pages.dev` という**オリジン単位**です。
+Cloudflare Pages はプロジェクトごとに別のサブドメインになるので、他のサイトとは分かれています。
 
-- このアカウントの GitHub Pages には、あしあとさろん以外のサイトを置かないこと
-- どうしても置く必要が出たら、そのサイトは専用の別アカウントに置くか、
-  あしあとさろん側をカスタムドメインに移して(CORS の許可オリジンもそのドメインに変えて)分けること
+- 独自ドメインに切り替えたら、`worker/src/lib.js` の `SITE_ORIGIN` をそのドメインに変えて再デプロイすること
+  (変えないと、新しいドメインの管理画面から保存できない)
+- 同じオリジンに、あしあとさろん以外のページを置かないこと
 
 ## 8. テンプレートを変えたら再デプロイが必要
 
@@ -204,6 +203,6 @@ wrangler deploy
 - 写真は1枚1MBまで(管理画面は縮小してから送るので通常は数百KB)。Cloudflare 無料プランの CPU 時間(1リクエスト10ms)に収めるため、Worker は写真の base64 をデコードせずにそのまま GitHub に渡します(先頭の JPEG 判定とサイズ計算だけ行う)。
 - 管理画面を開くと(GET /content)、公開用 index.html が最新の content.json と食い違っていれば Worker が自動で作り直します(content.json やテンプレートを手で直した後の自己修復)。
 - ビルド確認だけ: `wrangler deploy --dry-run --outdir <一時フォルダ>`
-- ローカル実行: `wrangler dev --var SESSION_SECRET:s --var ADMIN_PASSWORD:pw --var GITHUB_TOKEN:<テスト用PAT>`(CORS は `https://rk25fix-crypto.github.io` 固定なので、ブラウザから叩く場合は注意)
+- ローカル実行: `wrangler dev --var SESSION_SECRET:s --var ADMIN_PASSWORD:pw --var GITHUB_TOKEN:<テスト用PAT>`(CORS は `https://ashiato-salon.pages.dev` 固定なので、ブラウザから叩く場合は注意)
 - ログ確認: `wrangler tail`
 - 構成: `src/index.js`(ルーティング) / `src/lib.js`(処理本体) / `render.js`(テンプレート置換、Node と共用の CommonJS。`type: module` は付けないこと) / `build-index.js`(ローカル生成)
