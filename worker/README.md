@@ -4,7 +4,8 @@
 **パスワード確認**と **GitHub への保存(コミット)** だけを行う中継役です。
 仕様は [API.md](./API.md) が唯一の正です。
 
-- 保存するたびに `data/content.json` と `index.html`(写真の時は写真ファイルも)が GitHub の main ブランチにコミットされ、GitHub Pages が数分で公開します。
+- 保存するたびに、変更したファイル(文章なら `data/content.json` と `index.html`、写真なら写真ファイルと `index.html`)が **1回の保存につき1コミット** で GitHub の main ブランチに記録され、GitHub Pages が数分で公開します。
+  (GitHub Pages のビルドは「1時間に10回程度」が目安なので、短時間に何十回も保存し続けると反映が遅れることがあります)
 - 編集できる項目は `data/content.json` にあるキーそのものです。項目を増やす時は、テンプレートと content.json にキーを足すだけで Worker の修正は不要です(ただしテンプレートを変えたら再デプロイが必要。下の 8 を参照)。
 
 以下のコマンドは **PowerShell** で、このリポジトリの `worker` フォルダに移動してから実行します。
@@ -199,8 +200,9 @@ wrangler deploy
 
 - テスト: `node worker.test.mjs`(GitHub へは通信しません。fetch をモックしています)。`node render.test.js` は置換関数のテスト。`node verify-migration.js` はテンプレート・content.json・index.html の整合チェック。
 - 公開用 `index.html` のローカル生成: `node build-index.js`(Worker の生成と同じ出力。0 を参照)
-- 写真は1枚1MBまで(GitHub Contents API の制限に合わせている。管理画面は縮小してから送るので通常は数百KB)。
-- 管理画面を開くと(GET /content)、公開用 index.html が最新の content.json と食い違っていれば Worker が自動で作り直します(保存が途中で失敗した時の自己修復)。
+- 書き込みは GitHub の Git Data API(blob → tree → commit → ref 更新)で、1回の保存を1コミットにまとめています。途中で失敗しても main は動かない(中途半端な状態が公開されない)。別の保存と同時になった時は1回だけ自動でやり直します。
+- 写真は1枚1MBまで(管理画面は縮小してから送るので通常は数百KB)。Cloudflare 無料プランの CPU 時間(1リクエスト10ms)に収めるため、Worker は写真の base64 をデコードせずにそのまま GitHub に渡します(先頭の JPEG 判定とサイズ計算だけ行う)。
+- 管理画面を開くと(GET /content)、公開用 index.html が最新の content.json と食い違っていれば Worker が自動で作り直します(content.json やテンプレートを手で直した後の自己修復)。
 - ビルド確認だけ: `wrangler deploy --dry-run --outdir <一時フォルダ>`
 - ローカル実行: `wrangler dev --var SESSION_SECRET:s --var ADMIN_PASSWORD:pw --var GITHUB_TOKEN:<テスト用PAT>`(CORS は `https://rk25fix-crypto.github.io` 固定なので、ブラウザから叩く場合は注意)
 - ログ確認: `wrangler tail`

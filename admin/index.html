@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Cloudflare Worker の URL(末尾スラッシュなし)。Worker を別名で作り直した時はここを書き換える
+  const WORKER_URL = 'https://ashiato-salon-admin.sync-app-2026.workers.dev';
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>ページを編集｜あしあとさろん</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Zen+Old+Mincho&display=swap">
+<style>
+  :root{
+    --deep:#a8506a;
+    --deep-2:#8a3d56;
+    --cream:#fbf1f0;
+    --paper:#fffdfa;
+    --ink:#4a3a3f;
+    --muted:#7d5560;
+    --brown:#9c5a35;
+    --line:#eddade;
+    --disabled:#d8c6ca;
+    --error:#a63b3b;
+    --error-bg:#f7e8e6;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  h1,h2,h3{font-weight:700;margin:0;}
+  p{margin:0;}
+  button,textarea,input{font-family:inherit;}
+  [hidden]{display:none!important;}
+
+  /* ---- 画面の枠 ---- */
+  .screen{height:100vh;height:100dvh;display:flex;flex-direction:column;}
+
+  /* ---- ログイン ---- */
+  #login{
+    background:radial-gradient(120% 90% at 15% -10%, #fff 0%, var(--cream) 55%), var(--cream);
+    padding:max(32px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    overflow-y:auto;
+  }
+  .login-inner{width:100%;max-width:400px;margin:0 auto;display:flex;flex-direction:column;flex:1;}
+  .brand{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 0 22px;}
+  .logo{width:60px;height:60px;background:#2ee3e6;border-radius:15px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(46,227,230,.35);}
+  .brand-name{font-family:"Zen Old Mincho",Georgia,serif;font-size:.85rem;letter-spacing:.06em;color:var(--muted);}
+  .login-title{font-size:1.4rem;text-align:center;}
+  .login-sub{font-size:.92rem;color:var(--muted);line-height:1.7;text-align:center;margin:8px 0 28px;}
+  .field-label{display:block;font-size:.9rem;font-weight:700;margin-bottom:8px;}
+  .field input{
+    width:100%;padding:16px;font-size:1.15rem;letter-spacing:.08em;
+    border:1.5px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--deep);outline-offset:1px;}
+  .pw-row{display:flex;gap:8px;}
+  .pw-row input{flex:1;min-width:0;}
+  .pw-toggle{flex-shrink:0;min-width:72px;padding:0 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);font-size:.95rem;font-weight:700;cursor:pointer;}
+  .field-error{font-size:.9rem;color:var(--error);font-weight:700;min-height:1.5em;margin:8px 0 4px;line-height:1.6;}
+
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;border:none;border-radius:16px;cursor:pointer;font-weight:700;transition:transform .12s ease,background .15s ease;}
+  .btn:active{transform:scale(.98);}
+  .btn-lg{padding:17px 18px;font-size:1.08rem;width:100%;min-height:56px;}
+  .btn-primary{background:var(--deep);color:var(--paper);}
+  .btn-primary:disabled{background:var(--disabled);cursor:not-allowed;transform:none;}
+  .btn svg{width:20px;height:20px;flex-shrink:0;}
+
+  /* ---- 編集画面 ---- */
+  #editor{background:var(--paper);}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:max(8px, env(safe-area-inset-top)) 12px 8px 16px;
+    background:var(--paper);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .topbar-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;}
+  .mini-logo{width:26px;height:26px;background:#2ee3e6;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mini-logo svg{width:15px;height:15px;}
+  .logout-btn{
+    display:flex;align-items:center;gap:6px;border:none;background:var(--cream);color:var(--ink);
+    font-size:.85rem;font-weight:700;padding:9px 12px;border-radius:999px;cursor:pointer;min-height:40px;
+  }
+  .logout-btn svg{width:16px;height:16px;}
+  .hint{
+    display:flex;align-items:center;gap:8px;flex-shrink:0;
+    font-size:.88rem;font-weight:700;color:var(--brown);background:var(--cream);
+    padding:8px 16px;border-bottom:1px solid var(--line);
+  }
+  .hint-box{width:18px;height:14px;border:1.5px dashed rgba(156,90,53,.8);border-radius:3px;flex-shrink:0;}
+
+  .frame-area{flex:1;position:relative;min-height:0;}
+  #preview{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:block;}
+  .state-block{
+    position:absolute;inset:0;background:var(--paper);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px 20px;text-align:center;
+  }
+  .spinner{width:36px;height:36px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--deep);animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .state-text{font-size:.95rem;color:var(--muted);line-height:1.7;}
+  .state-error-text{font-size:.95rem;color:var(--error);line-height:1.7;font-weight:700;}
+  .retry-btn{padding:14px 24px;border:none;border-radius:14px;background:var(--deep);color:var(--paper);font-weight:700;font-size:1rem;cursor:pointer;min-height:50px;}
+
+  /* ---- 下からせり上がる編集シート ---- */
+  .sheet-backdrop{
+    position:fixed;inset:0;background:rgba(35,26,29,.45);
+    opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:10;
+  }
+  .sheet-backdrop.open{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;
+    background:var(--paper);border-radius:22px 22px 0 0;
+    padding:10px 20px calc(20px + env(safe-area-inset-bottom,0px));
+    max-height:88%;display:flex;flex-direction:column;
+    transform:translateY(105%);transition:transform .25s ease, visibility 0s linear .25s;z-index:11;
+    box-shadow:0 -10px 30px rgba(74,58,63,.18);
+    visibility:hidden;
+  }
+  .sheet.open{transform:translateY(0);visibility:visible;transition:transform .25s ease, visibility 0s;}
+  @media (prefers-reduced-motion: reduce){.sheet,.sheet-backdrop{transition:none;}}
+  .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px;flex-shrink:0;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-shrink:0;}
+  .sheet-head h3{font-size:1.1rem;}
+  .sheet-close{width:40px;height:40px;border-radius:50%;border:none;background:var(--cream);color:var(--ink);font-size:1.2rem;line-height:1;cursor:pointer;flex-shrink:0;}
+  .sheet-body{overflow-y:auto;min-height:0;}
+  .sheet-body textarea{
+    width:100%;min-height:130px;padding:14px;font-size:1.05rem;line-height:1.7;
+    border:1.5px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);resize:vertical;display:block;
+  }
+  .sheet-body textarea:focus{outline:2px solid var(--deep);outline-offset:1px;}
+  .sheet-note{font-size:.88rem;color:var(--muted);line-height:1.7;margin-top:8px;}
+  .sheet-warning{
+    background:var(--error-bg);border:1.5px solid var(--error);color:var(--error);
+    font-size:.9rem;font-weight:700;line-height:1.7;border-radius:12px;padding:12px 14px;margin-bottom:14px;
+  }
+  .preview-label{font-size:.85rem;font-weight:700;color:var(--muted);margin-bottom:6px;}
+  .preview-img{width:100%;max-height:34vh;object-fit:contain;border-radius:14px;border:1px solid var(--line);display:block;margin-bottom:14px;background:var(--cream);}
+  .upload-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px;border:2px dashed var(--brown);border-radius:14px;color:var(--brown);font-weight:700;font-size:1rem;cursor:pointer;min-height:56px;}
+  .upload-btn svg{width:22px;height:22px;}
+  .upload-btn.has-file{border-style:solid;background:var(--cream);}
+  .upload-btn.is-disabled{opacity:.45;cursor:not-allowed;}
+  #img-new-block{margin-top:14px;}
+  .sheet-error{font-size:.92rem;font-weight:700;color:var(--error);min-height:1.5em;margin:10px 0 8px;line-height:1.6;flex-shrink:0;}
+  #sheet-save{flex-shrink:0;}
+
+  /* ---- トースト ---- */
+  .toast{
+    position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(-10px);
+    width:max-content;max-width:calc(100% - 32px);
+    background:var(--deep-2);color:var(--paper);font-size:.92rem;font-weight:700;line-height:1.5;
+    padding:12px 18px;border-radius:16px;display:flex;align-items:center;gap:10px;
+    opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:20;
+    box-shadow:0 8px 20px rgba(74,58,63,.25);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast svg{width:18px;height:18px;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- ============ ログイン ============ -->
+<section id="login" class="screen" hidden>
+  <div class="login-inner">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e2799e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>
+          <ellipse cx="12" cy="12.5" rx="2.3" ry="1.9"/>
+          <ellipse cx="9.3" cy="10.4" rx="1" ry="1.3"/>
+          <ellipse cx="14.7" cy="10.4" rx="1" ry="1.3"/>
+          <ellipse cx="10.4" cy="8.7" rx=".8" ry="1.1"/>
+          <ellipse cx="13.6" cy="8.7" rx=".8" ry="1.1"/>
+        </svg>
+      </div>
+      <p class="brand-name">あしあとさろん</p>
+    </div>
+    <h1 class="login-title">ホームページの編集</h1>
+    <p class="login-sub">写真・文章・料金を、ここから変えられます</p>
+
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label class="field-label" for="pw">パスワード</label>
+        <div class="pw-row">
+          <input type="password" id="pw" autocomplete="current-password" enterkeyhint="go" autocapitalize="off" spellcheck="false">
+          <button type="button" class="pw-toggle" id="pw-toggle" aria-controls="pw" aria-pressed="false">表示</button>
+        </div>
+      </div>
+      <p class="field-error" id="pw-error" role="alert"></p>
+      <button type="submit" class="btn btn-primary btn-lg" id="login-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span id="login-btn-label">ログイン</span>
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ 編集画面 ============ -->
+<section id="editor" class="screen" hidden>
+  <div class="topbar">
+    <span class="topbar-title">
+      <span class="mini-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#e2799e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>
+      </span>
+      ページを編集
+    </span>
+    <button type="button" class="logout-btn" id="logout-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      ログアウト
+    </button>
+  </div>
+  <p class="hint"><span class="hint-box" aria-hidden="true"></span>破線の部分をタップすると編集できます</p>
+
+  <div class="frame-area">
+    <!-- allow-scripts は付けない: プレビュー内のスクリプトを親(ログイン情報を持つ)と同じオリジンで動かさないため。
+         allow-same-origin は親から contentDocument を触る(クリック検出・スタイル注入・スクロール復元)のに必要 -->
+    <iframe id="preview" title="ホームページのプレビュー" sandbox="allow-same-origin"></iframe>
+    <div class="state-block" id="loading-state">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="state-text">読み込み中…</p>
+    </div>
+    <div class="state-block" id="error-state" hidden>
+      <p class="state-error-text" id="error-text"></p>
+      <button type="button" class="retry-btn" id="retry-btn">もう一度読み込む</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 編集シート ============ -->
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h3 id="sheet-title">文章を編集</h3>
+    <button type="button" class="sheet-close" id="sheet-close" aria-label="閉じる">×</button>
+  </div>
+  <div class="sheet-body">
+    <div id="text-pane">
+      <div class="sheet-warning" id="license-warning" hidden>保健所の登録証に記載の内容と一致させてください。内容が正しくないと、無許可営業とみなされる可能性があります。</div>
+      <textarea id="text-input" rows="5" aria-labelledby="sheet-title"></textarea>
+      <p class="sheet-note" id="price-note" hidden>例: ¥3,400（¥3,740）　（ ）の中は税込価格</p>
+    </div>
+    <div id="image-pane">
+      <p class="preview-label">いまの写真</p>
+      <img class="preview-img" id="img-current" alt="いまの写真">
+      <label class="upload-btn" id="upload-btn">
+        <input type="file" accept="image/*" id="file-input" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span id="upload-label">写真を選ぶ</span>
+      </label>
+      <div id="img-new-block" hidden>
+        <p class="preview-label">あたらしい写真</p>
+        <img class="preview-img" id="img-new" alt="あたらしい写真">
+      </div>
+    </div>
+  </div>
+  <p class="sheet-error" id="sheet-error" role="alert"></p>
+  <button type="button" class="btn btn-primary btn-lg" id="sheet-save">保存する</button>
+</div>
+
+<div class="toast" id="toast" role="status">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toast-text"></span>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var $ = function(id){ return document.getElementById(id); };
+  var SESSION_KEY = 'ashiatoAdminSession';   // { token, expiresAt(ミリ秒) }
+  var MSG_NETWORK = '通信できませんでした。電波の良いところでもう一度お試しください';
+  var MSG_SAVE_FAILED = '保存できませんでした。しばらくしてからもう一度お試しください';
+  var MSG_BAD_PHOTO = 'この写真は使えません。別の写真を選んでください';
+
+  var token = null;
+  var content = null;    // GET /content の content({ texts, images })
+  var editing = null;    // { type:'text'|'image', key, dataUrl? }
+  var saving = false;
+
+  /* ================= セッション ================= */
+  function loadSession(){
+    try{
+      var s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      if(s && s.token && s.expiresAt > Date.now()) return s.token;
+      localStorage.removeItem(SESSION_KEY);
+    }catch(e){}
+    return null;
+  }
+  function saveSession(t, expiresAt){
+    token = t;
+    try{ localStorage.setItem(SESSION_KEY, JSON.stringify({ token:t, expiresAt:expiresAt })); }catch(e){}
+  }
+  function clearSession(){
+    token = null;
+    try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  }
+
+  /* ================= API ================= */
+  function api(path, body){
+    var headers = {};
+    if(token) headers['Authorization'] = 'Bearer ' + token;
+    if(body) headers['Content-Type'] = 'application/json';
+    return fetch(WORKER_URL + path, {
+      method: body ? 'POST' : 'GET',
+      headers: headers,
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(data){
+        return { ok:res.ok, status:res.status, data:data || {} };
+      });
+    }, function(){
+      return { ok:false, status:0, data:{ error:MSG_NETWORK } };
+    });
+  }
+
+  /* ================= 画面切り替え ================= */
+  function showLogin(message){
+    closeSheet(true);
+    content = null;
+    $('preview').removeAttribute('srcdoc');
+    $('editor').hidden = true;
+    $('login').hidden = false;
+    $('pw').value = '';
+    setPwVisible(false);
+    $('pw-error').textContent = message || '';
+  }
+  function showEditor(){
+    $('login').hidden = true;
+    $('editor').hidden = false;
+    loadContent();
+  }
+  // 401 を受けたら token を消してログイン画面へ
+  function sessionExpired(res){
+    clearSession();
+    showLogin(res.data.error || 'もう一度ログインしてください');
+  }
+
+  /* ================= ログイン / ログアウト ================= */
+  $('login-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var pw = $('pw').value;
+    if(!pw){ $('pw-error').textContent = 'パスワードを入力してください'; return; }
+    $('pw-error').textContent = '';
+    $('login-btn').disabled = true;
+    $('login-btn-label').textContent = 'ログイン中…';
+    api('/login', { password:pw }).then(function(res){
+      $('login-btn').disabled = false;
+      $('login-btn-label').textContent = 'ログイン';
+      if(res.ok && res.data.token){
+        saveSession(res.data.token, res.data.expiresAt);
+        $('pw').value = '';
+        showEditor();
+      } else {
+        $('pw-error').textContent = res.data.error || MSG_NETWORK;
+      }
+    });
+  });
+
+  // 長い合言葉を伏せ字のまま打つと間違えやすいので、文字を見せられるようにする
+  function setPwVisible(on){
+    $('pw').type = on ? 'text' : 'password';
+    $('pw-toggle').textContent = on ? '隠す' : '表示';
+    $('pw-toggle').setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  $('pw-toggle').addEventListener('click', function(){
+    setPwVisible($('pw').type === 'password');
+    $('pw').focus();
+  });
+
+  $('logout-btn').addEventListener('click', function(){
+    clearSession();
+    showLogin('');
+  });
+
+  /* ================= プレビュー読み込み ================= */
+  function setState(state, errorText){
+    $('loading-state').hidden = state !== 'loading';
+    $('error-state').hidden = state !== 'error';
+    if(errorText) $('error-text').textContent = errorText;
+  }
+
+  function loadContent(){
+    setState('loading');
+    api('/content').then(function(res){
+      if(res.status === 401) return sessionExpired(res);
+      if(!res.ok || !res.data.content || typeof res.data.previewHtml !== 'string'){
+        setState('error', res.data.error || '読み込みに失敗しました。もう一度お試しください');
+        return;
+      }
+      content = res.data.content;
+      showPreview(res.data.previewHtml, null);
+    });
+  }
+  $('retry-btn').addEventListener('click', loadContent);
+
+  // iframe の中の編集できる部分に付ける見た目
+  var PREVIEW_CSS =
+    // 白いふち(box-shadow)の上に茶色の破線(outline)を重ね、明るい背景でも濃い背景(ボタン等)でも見えるようにする
+    '[data-k]{outline:1.5px dashed rgba(156,90,53,.8);outline-offset:2px;box-shadow:0 0 0 3.5px rgba(255,253,250,.75);border-radius:3px;cursor:pointer;}' +
+    // 写真は暗い所・明るい所が混ざるので、写真の上に白い破線、外側に茶色のふちの二重にする
+    'img[data-img]{outline:3px dashed rgba(255,253,250,.95);outline-offset:-8px;box-shadow:0 0 0 3px rgba(156,90,53,.85);cursor:pointer;}' +
+    '[data-k]:active,img[data-img]:active{background-color:rgba(156,90,53,.14);}' +
+    '.__just-saved{animation:__saved 1.6s ease;}' +
+    '@keyframes __saved{0%,40%{background-color:rgba(79,138,99,.35);}100%{background-color:transparent;}}' +
+    // 写真は背景色が見えないので、写真の上の破線を緑の太線にして光らせる
+    'img.__just-saved{animation-name:__saved-img;}' +
+    '@keyframes __saved-img{0%,40%{outline:6px solid rgba(79,138,99,1);}}' +
+    '*,*::before,*::after{transition:none!important;animation-duration:0s!important;animation-delay:0s!important;scroll-behavior:auto!important;}' +
+    '.__just-saved{animation-duration:1.6s!important;}' +
+    // プレビューではページのスクリプトを動かさない(sandbox)ので、スクロールに連動するギャラリーの丸印は止まったままになる。
+    // 誤解を招かないよう隠す(場所は空けたままにしてレイアウトは変えない)
+    '#dots{visibility:hidden;}';
+
+  // restore: { y, inner:[{sel, left, top}], flashKey } または null
+  function showPreview(html, restore){
+    var frame = $('preview');
+    frame.onload = function(){
+      frame.onload = null;
+      var doc = frame.contentDocument;
+      var style = doc.createElement('style');
+      style.textContent = PREVIEW_CSS;
+      doc.head.appendChild(style);
+      doc.addEventListener('click', onPreviewClick, true);
+      doc.addEventListener('submit', function(e){ e.preventDefault(); }, true);
+      if(restore){
+        applyScroll(frame, restore);
+        if(restore.flashKey) flash(doc, restore.flashKey);
+        reapplyAfterImages(frame, doc, restore);
+      }
+      setState('ready');
+    };
+    frame.srcdoc = html;
+  }
+
+  function applyScroll(frame, restore){
+    var doc = frame.contentDocument;
+    restore.inner.forEach(function(s){
+      var el = doc.getElementById(s.id);
+      if(el){ el.scrollLeft = s.left; el.scrollTop = s.top; }
+    });
+    frame.contentWindow.scrollTo(0, restore.y);
+  }
+
+  // 後から読み込まれた画像で高さが変わって位置がずれるのを防ぐため、画像がそろったらもう一度戻す。
+  // その前に自分でスクロールし始めていたら、邪魔しないように戻さない
+  function reapplyAfterImages(frame, doc, restore){
+    var pending = Array.prototype.filter.call(doc.images, function(img){ return !img.complete; });
+    if(!pending.length) return;
+    var cancelled = false;
+    var cancel = function(){ cancelled = true; };
+    ['touchstart','wheel','keydown','mousedown'].forEach(function(t){
+      doc.addEventListener(t, cancel, { capture:true, once:true, passive:true });
+    });
+    Promise.all(pending.map(function(img){
+      return new Promise(function(done){
+        img.addEventListener('load', done); img.addEventListener('error', done);
+      });
+    })).then(function(){
+      if(!cancelled && frame.contentDocument === doc) applyScroll(frame, restore);
+    });
+  }
+
+  // 差し替え前のスクロール位置(ページ全体+横スクロールのギャラリー等)を覚える
+  function captureScroll(){
+    var doc = $('preview').contentDocument;
+    if(!doc || !doc.documentElement) return { y:0, inner:[] };
+    var inner = [];
+    doc.querySelectorAll('[id]').forEach(function(el){
+      if(el.scrollLeft || el.scrollTop) inner.push({ id:el.id, left:el.scrollLeft, top:el.scrollTop });
+    });
+    return { y:$('preview').contentWindow.scrollY, inner:inner };
+  }
+
+  function flash(doc, key){
+    var sel = key.type === 'image' ? 'img[data-img]' : '[data-k]';
+    var attr = key.type === 'image' ? 'data-img' : 'data-k';
+    doc.querySelectorAll(sel).forEach(function(el){
+      if(el.getAttribute(attr) === key.key) el.classList.add('__just-saved');
+    });
+  }
+
+  /* ================= プレビュー内のタップ ================= */
+  function onPreviewClick(e){
+    var doc = $('preview').contentDocument;
+    var t = e.target.nodeType === 1 ? e.target : e.target.parentElement;
+    if(!t) return;
+    // リンクやボタンで別ページに移動しないようにする(ギャラリーの丸ボタン等は動かしてよい)
+    if(t.closest('a')) e.preventDefault();
+
+    var textEl = t.closest('[data-k]');
+    if(textEl){
+      e.preventDefault(); e.stopPropagation();
+      openTextSheet(textEl.getAttribute('data-k'));
+      return;
+    }
+    // 写真の上に説明文などが重なっていても、その下の写真を拾う
+    var imgEl = t.closest('img[data-img]');
+    if(!imgEl){
+      var under = doc.elementsFromPoint(e.clientX, e.clientY);
+      for(var i=0;i<under.length;i++){
+        if(under[i].matches('img[data-img]')){ imgEl = under[i]; break; }
+      }
+    }
+    if(imgEl){
+      e.preventDefault(); e.stopPropagation();
+      openImageSheet(imgEl.getAttribute('data-img'), imgEl.currentSrc || imgEl.src);
+    }
+  }
+
+  /* ================= シート共通 ================= */
+  function openSheet(title){
+    $('sheet-title').textContent = title;
+    $('sheet-error').textContent = '';
+    setSaving(false);
+    $('sheet-backdrop').classList.add('open');
+    $('sheet').classList.add('open');
+  }
+  // 文章が元から変わっている、または新しい写真を選んである
+  function isDirty(){
+    if(!editing) return false;
+    if(editing.type === 'image') return !!editing.dataUrl;
+    return $('text-input').value !== content.texts[editing.key];
+  }
+  // force=true は保存成功時・ログアウト時。背景タップや×は保存中なら無視、書きかけなら確認する
+  function closeSheet(force){
+    if(!force && (saving || (isDirty() && !confirm('書きかけの内容を捨てますか？')))) return;
+    $('sheet-backdrop').classList.remove('open');
+    $('sheet').classList.remove('open');
+    editing = null;
+    $('text-input').blur();
+  }
+  $('sheet-backdrop').addEventListener('click', function(){ closeSheet(false); });
+  $('sheet-close').addEventListener('click', function(){ closeSheet(false); });
+
+  function setSaving(on){
+    saving = on;
+    $('sheet-save').disabled = on || (editing && editing.type === 'image' && !editing.dataUrl);
+    $('sheet-save').textContent = on ? '保存中…' : '保存する';
+    $('sheet-close').disabled = on;
+    // 保存中に写真を選び直すと、縮小完了時に保存中が解除されて二重送信できてしまうため
+    $('file-input').disabled = on;
+    $('upload-btn').classList.toggle('is-disabled', on);
+  }
+
+  /* ---------- 文章 ---------- */
+  function openTextSheet(key){
+    if(!content || !Object.prototype.hasOwnProperty.call(content.texts || {}, key)) return;
+    var isPrice = key.indexOf('price.') === 0;
+    var isLicense = key.indexOf('license.') === 0;
+    editing = { type:'text', key:key };
+    $('text-pane').hidden = false;
+    $('image-pane').hidden = true;
+    $('price-note').hidden = !isPrice;
+    $('license-warning').hidden = !isLicense;
+    $('text-input').value = content.texts[key];
+    openSheet(isPrice ? '料金を編集' : isLicense ? '登録表示を編集' : '文章を編集');
+  }
+
+  /* ---------- 写真 ---------- */
+  function openImageSheet(key, currentSrc){
+    if(!content || !Object.prototype.hasOwnProperty.call(content.images || {}, key)) return;
+    editing = { type:'image', key:key, dataUrl:null };
+    $('text-pane').hidden = true;
+    $('image-pane').hidden = false;
+    $('img-current').src = currentSrc;
+    $('img-new').removeAttribute('src');
+    $('img-new-block').hidden = true;
+    $('upload-btn').classList.remove('has-file');
+    $('upload-label').textContent = '写真を選ぶ';
+    $('file-input').value = '';
+    openSheet('写真を変える');
+  }
+
+  $('file-input').addEventListener('change', function(){
+    if(saving) return;
+    var file = this.files && this.files[0];
+    if(!file || !editing || editing.type !== 'image') return;
+    var target = editing;
+    $('sheet-error').textContent = '';
+    $('upload-label').textContent = '写真を準備中…';
+    // 準備中は前に選んだ写真で保存されないよう、いったん未選択に戻す(保存ボタンも無効になる)
+    target.dataUrl = null;
+    target.file = file;   // 続けて選び直した時は、最後に選んだ写真の結果だけ使う
+    $('img-new-block').hidden = true;
+    setSaving(false);
+    resizeImage(file, target.key === 'hero' ? 1600 : 1000).then(function(dataUrl){
+      if(editing !== target || target.file !== file || saving) return;
+      target.dataUrl = dataUrl;
+      $('img-new').src = dataUrl;
+      $('img-new-block').hidden = false;
+      $('upload-btn').classList.add('has-file');
+      $('upload-label').textContent = '別の写真にする';
+      setSaving(false);
+    }).catch(function(){
+      if(editing !== target || target.file !== file || saving) return;
+      target.dataUrl = null;
+      $('img-new-block').hidden = true;
+      $('upload-label').textContent = '写真を選ぶ';
+      $('sheet-error').textContent = MSG_BAD_PHOTO;
+      setSaving(false);
+    });
+  });
+
+  var MAX_UPLOAD_BYTES = 1024 * 1024;   // Worker の写真の上限(デコード後)
+  var JPEG_QUALITIES = [0.82, 0.7, 0.6, 0.5, 0.4];
+
+  // 長辺を maxDimension 以下に縮小し、1MB 以下の JPEG の dataURL にする
+  function resizeImage(file, maxDimension){
+    var url = URL.createObjectURL(file);
+    // <img> は画像の向き(EXIF)を反映した縦横の寸法を、全体をデコードせずに教えてくれる
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      img.onload = function(){ resolve(img); };
+      img.onerror = reject;
+      img.src = url;
+    }).then(function(img){
+      var scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+      var w = Math.max(1, Math.round(img.naturalWidth * scale));
+      var h = Math.max(1, Math.round(img.naturalHeight * scale));
+      var source;
+      if(!window.createImageBitmap){
+        source = Promise.resolve(img);   // 古いブラウザ: <img> をそのまま canvas に描く
+      } else {
+        // 4800万画素級の写真をフル解像度でデコードすると古い iPhone でメモリ不足になるので、縮小しながらデコードする。
+        // うまくいかなければフル解像度で、それもだめなら <img> から描く
+        source = createImageBitmap(file, { imageOrientation:'from-image', resizeWidth:w, resizeHeight:h, resizeQuality:'high' })
+          .then(function(b){
+            if(b.width !== w || b.height !== h){ if(b.close) b.close(); throw new Error('size'); }
+            return b;
+          })
+          .catch(function(){ return createImageBitmap(file, { imageOrientation:'from-image' }); })
+          .catch(function(){ return img; });
+      }
+      return source.then(function(src){
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(src, 0, 0, w, h);
+        if(src.close) src.close();
+        return encodeUnderLimit(canvas);
+      });
+    }).then(function(dataUrl){
+      URL.revokeObjectURL(url);
+      return dataUrl;
+    }, function(err){
+      URL.revokeObjectURL(url);
+      throw err;
+    });
+  }
+
+  // 1MB を超えたら品質を下げてやり直す(最後の品質でも超える時はそのまま送り、Worker のエラー文言を出す)
+  function encodeUnderLimit(canvas){
+    var dataUrl;
+    for(var i = 0; i < JPEG_QUALITIES.length; i++){
+      dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITIES[i]);
+      if(dataUrl.indexOf('data:image/jpeg') !== 0) throw new Error('encode');
+      var b64 = dataUrl.length - dataUrl.indexOf(',') - 1;
+      if(Math.floor(b64 * 3 / 4) <= MAX_UPLOAD_BYTES) break;
+    }
+    return dataUrl;
+  }
+
+  /* ---------- 保存 ---------- */
+  $('sheet-save').addEventListener('click', function(){
+    if(saving || !editing) return;
+    var target = editing;
+    var payload;
+    if(target.type === 'text'){
+      var value = $('text-input').value;
+      if(value.trim() === ''){ $('sheet-error').textContent = '内容を入力してください'; return; }
+      if(value === content.texts[target.key]){ closeSheet(false); toast('変更はありませんでした'); return; }
+      payload = { type:'texts', values:{} };
+      payload.values[target.key] = value;
+    } else {
+      if(!target.dataUrl){ $('sheet-error').textContent = '写真を選んでください'; return; }
+      payload = { type:'image', key:target.key, dataUrl:target.dataUrl };
+    }
+
+    $('sheet-error').textContent = '';
+    setSaving(true);
+    api('/save', payload).then(function(res){
+      if(res.status === 401) { saving = false; return sessionExpired(res); }
+      if(!res.ok || !res.data.ok){
+        setSaving(false);
+        $('sheet-error').textContent = res.data.error || MSG_SAVE_FAILED;
+        return;
+      }
+      var restore = captureScroll();
+      restore.flashKey = target;
+      if(res.data.content) content = res.data.content;
+      closeSheet(true);
+      toast(res.data.message || '保存しました');
+      if(typeof res.data.previewHtml === 'string') showPreview(res.data.previewHtml, restore);
+    });
+  });
+
+  /* ================= トースト ================= */
+  var toastTimer = null;
+  function toast(msg){
+    $('toast-text').textContent = msg;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ $('toast').classList.remove('show'); }, 3500);
+  }
+
+  /* ================= 起動 ================= */
+  token = loadSession();
+  if(token) showEditor(); else showLogin('');
+})();
+</script>
+</body>
+</html>

@@ -72,10 +72,10 @@ Request `{ "password": string }`
 
 ### GET /content
 
-- GitHub API から常に最新の `data/content.json` を取得して返す(Pages の反映待ちの影響を受けないため)。
+- GitHub API から常に最新の `data/content.json` を取得して返す(Pages の反映待ちの影響を受けないため)。読み方は POST /save の手順1〜2と同じ(main の最新コミットに固定して読む)。
 - `200 { "content": {...content.json...}, "previewHtml": string }`
 - `previewHtml` = テンプレートを `annotate: true` で描画し、`<head>` の直後(`<head>` が無ければ先頭)に `<base href="https://rk25fix-crypto.github.io/ashiato-salon/">` を入れたもの(`<!DOCTYPE>` より前に置くと quirks mode になるため)。`content.images` の画像は **最新コミットのSHAを使った raw URL**(`https://raw.githubusercontent.com/rk25fix-crypto/ashiato-salon/<commitSha>/images/hero.jpg`)にする(保存直後でも必ず新しい画像が出るように)。編集対象外の画像(ロゴ・QR)は相対パスのまま `<base>` で Pages から読む。
-- **自己修復**: 同じコミットの content.json から作った公開用 index.html(POST /save の手順3と同じ作り方)と、そのコミットの `index.html` を比べ、違っていれば `index.html` をPUTし直す(保存が content.json まで書けて index.html で失敗した場合に、公開サイトだけ古いまま固定されるのを防ぐ)。PUT にはそのコミット時点の sha を使い再試行しない(保存が割り込んでいたら 409 で諦め、古い内容で上書きしない)。修復に失敗しても GET 自体は 200 を返す(ログのみ)。
+- **自己修復**: 同じコミットの content.json から作った公開用 index.html(POST /save の手順4と同じ作り方)の git blob sha と、そのコミットのツリーにある `index.html` の blob sha を比べ、違っていれば `index.html` だけを POST /save の手順5〜6と同じ仕組みで1コミットで書き直す(content.json やテンプレートを手で直して index.html を作り直し忘れた場合などに、公開サイトだけ古いまま固定されるのを防ぐ)。親は読んだコミットに固定して再試行しない(保存が割り込んでいたら ref の更新が fast-forward にならず 422 で諦め、古い内容で上書きしない)。修復に失敗しても GET 自体は 200 を返す(ログのみ)。
 - GitHub が 401(トークン失効など) `502 { "error": "更新に失敗しました。管理者に連絡してください" }`。管理画面を開いた時点でこの文言が出る。
 
 ### POST /save
@@ -89,15 +89,20 @@ Request `{ "password": string }`
 
 検証(違反は `400`):
 - texts: すべてのキーが現在の `content.texts` に存在すること(新規キーは作れない) → `{"error":"不正なリクエストです"}`。各値は2000文字以内 → `{"error":"文字数が多すぎます"}`。
-- image: キーが現在の `content.images` に存在すること。先頭バイトが JPEG(`FF D8 FF`)であること。デコード後1MB以下(GitHub Contents API の既定メディアタイプの上限に合わせる) → 超過は `{"error":"写真のサイズが大きすぎます"}`。保存先パスは `content.images[key]` を使い、クライアントからパスは受け取らない。
+- image: キーが現在の `content.images` に存在すること。`dataUrl` の base64 部分が正しい base64 であること(使える文字は `A-Z a-z 0-9 + /`、`=` は末尾の1〜2文字だけ、長さは4の倍数。改行・空白は不可) → `{"error":"不正なリクエストです"}`。先頭バイトが JPEG(`FF D8 FF`)であること。デコード後のサイズが1MB(1024×1024バイト)以下 → 超過は `{"error":"写真のサイズが大きすぎます"}`。保存先パスは `content.images[key]` を使い、クライアントからパスは受け取らない。
+- 写真は **base64 のまま扱い、全体をデコードしない**(Cloudflare 無料プランの CPU 時間 10ms/リクエストに収めるため)。JPEG の確認は先頭4文字だけデコードし、サイズは base64 の長さとパディングから計算する(`長さ÷4×3 − '=' の数`)。GitHub にはクライアントから来た base64 文字列をそのまま渡す。
 
-処理(各PUTの直前にそのファイルのshaを取得、409/422は1回だけsha再取得して再PUT。単一ファイルの取得は `Accept: application/vnd.github.object+json` を使う。既定のメディアタイプでは1MB超のファイルが 403 `too_large` になり sha も取れないため。ディレクトリ一覧は既定のメディアタイプのまま):
-1. (image のみ)画像ファイルをPUT
-2. (texts のみ)`data/content.json` をPUT。image では content.json は変わらないので書かない
-3. テンプレート + 新しい content.json から `index.html` を生成してPUT。編集可能な画像のsrcには `?v=<その画像ファイルのblob sha>` を付けて、訪問者のブラウザキャッシュを回避する。
+処理(GitHub Git Data API で **1回の保存 = 1コミット**。GitHub Pages のビルドは1回で済み、途中まで書いて止まることもない):
+1. `GET /git/ref/heads/main` で main の最新コミット C を得る。
+2. 並行して `GET /git/commits/C`(C のツリー SHA)と `GET /contents/data/content.json?ref=C`(`Accept: application/vnd.github.raw+json`。中身をそのまま返し、1MB 制限を受けない)。続けて `GET /git/trees/<ツリー SHA>?recursive=1` で全ファイルの blob sha を得る。(`/git/trees/C` でも一覧は取れるが、応答の `sha` がツリーではなくコミットの SHA になり `base_tree` に使えないため、ツリー SHA は `/git/commits` から取る)。この content.json に対してキーを検証し、値を適用する。
+3. (image のみ)`POST /git/blobs`(`{ content: <クライアントの base64>, encoding: "base64" }`)で blob を作り、sha を得る。
+4. テンプレート + 新しい content.json から公開用 `index.html` を生成する。編集可能な画像の src には `?v=<その画像ファイルの blob sha>` を付けて、訪問者のブラウザキャッシュを回避する(今回アップロードした画像は手順3の sha、それ以外は手順2のツリーの sha)。
+5. `POST /git/trees`(`base_tree` = C のツリー)で変更するファイルを1つのツリーにする。texts なら `data/content.json` と `index.html`、image なら画像ファイル(手順3の blob sha)と `index.html`。image では content.json は変わらないので書かない。
+6. `POST /git/commits`(`parents: [C]`)→ `PATCH /git/refs/heads/main`(`force: false`)。
+7. 手順6の ref 更新が fast-forward にならない(422。手順1の後に別の保存が割り込んだ)場合は、手順1から丸ごと1回だけやり直す(写真の blob は中身で決まるので作り直さない)。2回目も失敗したら 500。
 
 応答:
-- 成功 `200 { "ok": true, "message": "保存しました。ホームページには数分後に反映されます", "content": {...}, "previewHtml": string }`(previewHtml は GET /content と同じ作り方。管理画面はこれでプレビューを差し替える)
+- 成功 `200 { "ok": true, "message": "保存しました。ホームページには数分後に反映されます", "content": {...}, "previewHtml": string }`(previewHtml は GET /content と同じ作り方で、画像の raw URL には手順6で作った新しいコミットの SHA を使う。管理画面はこれでプレビューを差し替える)
 - GitHub が 401(トークン失効など) `502 { "error": "更新に失敗しました。管理者に連絡してください" }`
 - その他 `500 { "error": "保存できませんでした。しばらくしてからもう一度お試しください" }`
 

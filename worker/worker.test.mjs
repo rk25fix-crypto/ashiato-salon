@@ -1,12 +1,12 @@
 // Worker本体の自己テスト(API v2)。フレームワーク無し、実行:
 //   node worker/worker.test.mjs
-// 本物のGitHubは使わず、fetch を小さな偽GitHub(メモリ内)に差し替えて検証する。
+// 本物のGitHubは使わず、fetch を小さな偽GitHub(メモリ内、Git Data API)に差し替えて検証する。
 // テンプレート/content.json は作業中の実ファイルに依存しないよう、ここで自作したフィクスチャを使う。
 
 import assert from 'node:assert';
 import {
   handleLogin, handleGetContent, handleSave, createToken, verifyToken, passwordMatches,
-  loginAttempts, RATE_LIMIT_MAX, renderPublic,
+  loginAttempts, RATE_LIMIT_MAX, renderPublic, gitBlobSha as workerBlobSha,
 } from './src/lib.js';
 import { buildIndex, gitBlobSha } from './build-index.js';
 
@@ -33,29 +33,56 @@ const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
 const dataUrl = (buf) => 'data:image/jpeg;base64,' + buf.toString('base64');
 
 const MB = 1024 * 1024;
-const OBJECT_MEDIA = 'application/vnd.github.object+json';
-const INITIAL_SHAS = { 'images/hero.jpg': 'hero-sha-0', 'images/gallery-1.jpg': 'g1-sha-0' };
+const RAW_MEDIA = 'application/vnd.github.raw+json';
+const HERO = Buffer.from('old hero');
+const G1 = Buffer.from('old gallery-1');
+const INITIAL_SHAS = { 'images/hero.jpg': gitBlobSha(HERO), 'images/gallery-1.jpg': gitBlobSha(G1) };
 // CONTENT と画像の状態に一致した公開用 index.html(整合している状態)
 const CONSISTENT_INDEX = renderPublic(TEMPLATE, CONTENT, INITIAL_SHAS);
+const contentJson = (c) => Buffer.from(JSON.stringify(c, null, 2) + '\n');
 
-// ---- 偽GitHub ----
-// failPut: { '<path>': [status, ...] } を渡すと、そのパスへのPUTが順にそのステータスで失敗する。
-// failGet: 同様にGETを失敗させる。
-// bodies: { '<path>': Buffer } で初期ファイルの中身を差し替える(sha はそのまま)。
-// 本物と同じく、1MB超のファイルは既定のメディアタイプで GET すると 403 too_large、
-// object メディアタイプなら sha だけ返す(content は空、encoding "none")。
-function fakeGithub({ failPut = {}, failGet = {}, bodies = {} } = {}) {
+// ---- 偽GitHub(Git Data API) ----
+// blob の sha は本物と同じ git hash-object の値。ツリーは { path: blob sha } の平らな辞書で持つ。
+// fail: { '<METHOD> <route の先頭>': [status, ...] } を渡すと、該当リクエストが順にそのステータスで失敗する。
+// bodies: { '<path>': Buffer } で初期ファイルの中身を差し替える。
+// beforePatch: [fn(gh), ...] は ref 更新(PATCH)を処理する直前に1つずつ呼ばれる(別の保存の割り込みを再現)。
+// ref の更新は本物と同じく、新しいコミットの親が現在の main でなければ 422(fast-forward でない)。
+function fakeGithub({ fail = {}, bodies = {}, beforePatch = [] } = {}) {
   let n = 0;
-  const sha = (p) => `${p}-sha-${++n}`;
-  const files = {
-    'data/content.json': { sha: 'content-sha-0', body: Buffer.from(JSON.stringify(CONTENT, null, 2)) },
-    'images/hero.jpg': { sha: 'hero-sha-0', body: Buffer.from('old') },
-    'images/gallery-1.jpg': { sha: 'g1-sha-0', body: Buffer.from('old') },
-    'images/logo.png': { sha: 'logo-sha-0', body: Buffer.from('logo') },
-    'index.html': { sha: 'index-sha-0', body: Buffer.from(CONSISTENT_INDEX) },
+  const gh = { blobs: {}, trees: {}, commits: {}, head: 'commit-0', calls: [] };
+  const addBlob = (buf) => {
+    const sha = gitBlobSha(buf);
+    gh.blobs[sha] = buf;
+    return sha;
   };
-  for (const [p, body] of Object.entries(bodies)) files[p].body = body;
-  const gh = { files, head: 'commit-0', calls: [] };
+  const initial = {
+    'data/content.json': contentJson(CONTENT),
+    'images/hero.jpg': HERO,
+    'images/gallery-1.jpg': G1,
+    'images/logo.png': Buffer.from('logo'),
+    'index.html': Buffer.from(CONSISTENT_INDEX),
+    ...bodies,
+  };
+  gh.trees['tree-0'] = Object.fromEntries(Object.entries(initial).map(([p, b]) => [p, addBlob(b)]));
+  gh.commits['commit-0'] = { tree: 'tree-0', parents: [] };
+
+  const treeOf = (commit = gh.head) => gh.trees[gh.commits[commit].tree];
+  gh.file = (path, commit) => gh.blobs[treeOf(commit)[path]];
+  // main に直接コミットする(別の保存が割り込んだ状態を作る)
+  gh.commit = (changes) => {
+    const tree = `tree-${++n}`;
+    gh.trees[tree] = { ...treeOf() };
+    for (const [p, b] of Object.entries(changes)) gh.trees[tree][p] = addBlob(b);
+    const sha = `commit-${++n}`;
+    gh.commits[sha] = { tree, parents: [gh.head] };
+    gh.head = sha;
+  };
+  // 2つのコミット間で中身が変わったファイル
+  gh.changed = (a, b) => {
+    const [ta, tb] = [treeOf(a), treeOf(b)];
+    return [...new Set([...Object.keys(ta), ...Object.keys(tb)])].filter((p) => ta[p] !== tb[p]).sort();
+  };
+
   const res = (status, body) => new Response(JSON.stringify(body), { status });
 
   globalThis.fetch = async (url, init = {}) => {
@@ -65,39 +92,67 @@ function fakeGithub({ failPut = {}, failGet = {}, bodies = {} } = {}) {
     assert.ok(url.startsWith(API), 'GitHub API 以外への通信: ' + url);
     assert.strictEqual(init.headers.Authorization, 'Bearer gh-token');
     const route = url.slice(API.length);
+    const call = method + ' ' + route;
     gh.calls.push({ method, route, body });
+    for (const [prefix, statuses] of Object.entries(fail)) {
+      if (call.startsWith(prefix) && statuses.length) return res(statuses.shift(), { message: 'fail' });
+    }
+    let m;
 
-    if (route === '/git/ref/heads/main') return res(200, { object: { sha: gh.head } });
-    const m = route.match(/^\/contents\/([^?]*)(?:\?ref=(.+))?$/);
-    if (!m) return res(404, {});
-    const path = m[1];
-    if (method === 'GET') {
-      if (failGet[path] && failGet[path].length) return res(failGet[path].shift(), { message: 'fail' });
-      const objectMedia = init.headers.Accept === OBJECT_MEDIA;
-      const f = files[path];
-      if (f) {
-        const big = f.body.length > MB;
-        if (big && !objectMedia) return res(403, { message: 'too large', errors: [{ code: 'too_large' }] });
-        return res(200, {
-          type: 'file', sha: f.sha, size: f.body.length, encoding: big ? 'none' : 'base64',
-          content: big ? '' : f.body.toString('base64').replace(/(.{60})/g, '$1\n'),
-        });
+    if (call === 'GET /git/ref/heads/main') return res(200, { object: { sha: gh.head } });
+    if ((m = call.match(/^GET \/git\/commits\/(.+)$/))) {
+      const c = gh.commits[m[1]];
+      return c ? res(200, { sha: m[1], tree: { sha: c.tree } }) : res(404, {});
+    }
+    if ((m = call.match(/^GET \/contents\/([^?]+)\?ref=(.+)$/))) {
+      assert.strictEqual(init.headers.Accept, RAW_MEDIA, '中身は raw メディアタイプで取る(1MB制限を受けない)');
+      assert.ok(gh.commits[m[2]], 'ref はコミットSHA(読んだコミットに固定する)');
+      const buf = gh.file(m[1], m[2]);
+      return buf ? new Response(buf, { status: 200 }) : res(404, {});
+    }
+    if ((m = call.match(/^GET \/git\/trees\/([^?]+)\?recursive=1$/))) {
+      const t = gh.trees[m[1]];
+      assert.ok(t, 'ツリーSHAで取ること: ' + m[1]);
+      const dirs = [...new Set(Object.keys(t).filter((p) => p.includes('/')).map((p) => p.slice(0, p.lastIndexOf('/'))))];
+      const tree = [
+        ...dirs.map((p) => ({ path: p, mode: '040000', type: 'tree', sha: 'dir-' + p })),
+        ...Object.entries(t).map(([p, sha]) => ({ path: p, mode: '100644', type: 'blob', sha })),
+      ];
+      return res(200, { sha: m[1], tree, truncated: false });
+    }
+    if (call === 'POST /git/blobs') {
+      assert.strictEqual(body.encoding, 'base64');
+      return res(201, { sha: addBlob(Buffer.from(body.content, 'base64')) });
+    }
+    if (call === 'POST /git/trees') {
+      assert.ok(gh.trees[body.base_tree], 'base_tree はツリーSHA');
+      const t = { ...gh.trees[body.base_tree] };
+      for (const e of body.tree) {
+        assert.strictEqual(e.mode, '100644');
+        assert.strictEqual(e.type, 'blob');
+        if (typeof e.content === 'string') t[e.path] = addBlob(Buffer.from(e.content, 'utf8'));
+        else assert.ok(gh.blobs[(t[e.path] = e.sha)], '存在しない blob: ' + e.sha);
       }
-      assert.ok(!objectMedia, 'ディレクトリ一覧は既定のメディアタイプで取ること(object だと形が変わる)');
-      const list = Object.entries(files)
-        .filter(([p]) => p.startsWith(path + '/') && !p.slice(path.length + 1).includes('/'))
-        .map(([p, f]) => ({ type: 'file', path: p, sha: f.sha }));
-      return list.length ? res(200, list) : res(404, { message: 'Not Found' });
+      const sha = `tree-${++n}`;
+      gh.trees[sha] = t;
+      return res(201, { sha });
     }
-    if (method === 'PUT') {
-      if (failPut[path] && failPut[path].length) return res(failPut[path].shift(), { message: 'fail' });
-      if (files[path] && body.sha !== files[path].sha) return res(409, { message: 'sha mismatch' });
-      assert.strictEqual(body.branch, 'main');
-      files[path] = { sha: sha(path), body: Buffer.from(body.content, 'base64') };
-      gh.head = `commit-${n}`;
-      return res(200, { content: { sha: files[path].sha }, commit: { sha: gh.head } });
+    if (call === 'POST /git/commits') {
+      assert.ok(gh.trees[body.tree]);
+      assert.strictEqual(body.parents.length, 1);
+      assert.ok(gh.commits[body.parents[0]]);
+      const sha = `commit-${++n}`;
+      gh.commits[sha] = { tree: body.tree, parents: body.parents, message: body.message };
+      return res(201, { sha });
     }
-    return res(405, {});
+    if (call === 'PATCH /git/refs/heads/main') {
+      assert.strictEqual(body.force, false, 'force で上書きしない');
+      if (beforePatch.length) beforePatch.shift()(gh);
+      if (gh.commits[body.sha].parents[0] !== gh.head) return res(422, { message: 'Update is not a fast forward' });
+      gh.head = body.sha;
+      return res(200, { object: { sha: gh.head } });
+    }
+    return res(404, {});
   };
   return gh;
 }
@@ -121,10 +176,25 @@ function req(method, path, body, headers = {}) {
 }
 const auth = async () => ({ Authorization: 'Bearer ' + (await createToken(ENV)).token });
 const save = async (body) => handleSave(req('POST', '/save', body, await auth()), ENV, TEMPLATE);
-const puts = (gh) => gh.calls.filter((c) => c.method === 'PUT').map((c) => c.route);
-const putBody = (gh, path) => {
-  const c = gh.calls.filter((x) => x.method === 'PUT' && x.route === '/contents/' + path).pop();
-  return Buffer.from(c.body.content, 'base64').toString('utf8');
+const getContent = async () => handleGetContent(req('GET', '/content', undefined, await auth()), ENV, TEMPLATE);
+const writes = (gh) => gh.calls.filter((c) => c.method !== 'GET').map((c) => c.method + ' ' + c.route);
+const patches = (gh) => writes(gh).filter((w) => w.startsWith('PATCH')).length;
+const READ = (commit, tree) => [
+  'GET /git/ref/heads/main',
+  `GET /git/commits/${commit}`,
+  `GET /contents/data/content.json?ref=${commit}`,
+  `GET /git/trees/${tree}?recursive=1`,
+];
+const COMMIT = ['POST /git/trees', 'POST /git/commits', 'PATCH /git/refs/heads/main'];
+const quiet = async (fn) => {
+  const orig = console.error;
+  let logged = '';
+  console.error = (...a) => { logged += a.join(' '); };
+  try {
+    return [await fn(), logged];
+  } finally {
+    console.error = orig;
+  }
 };
 
 let passed = 0;
@@ -210,82 +280,76 @@ async function main() {
   });
 
   console.log('GET /content');
-  await check('最新コミットSHAで content と previewHtml を返す', async () => {
+  await check('最新コミットに固定して content と previewHtml を返す(整合していれば書き込まない)', async () => {
     const gh = fakeGithub();
-    gh.head = 'abc123';
-    const res = await handleGetContent(req('GET', '/content', undefined, await auth()), ENV, TEMPLATE);
+    gh.commit({ 'images/logo.png': Buffer.from('logo2') }); // head を commit-0 以外にする
+    const head = gh.head;
+    const res = await getContent();
     assert.strictEqual(res.status, 200);
     const body = await res.json();
     assert.deepStrictEqual(body.content, CONTENT);
-    assert.deepStrictEqual(gh.calls.map((c) => c.method + ' ' + c.route), [
-      'GET /git/ref/heads/main',
-      'GET /contents/data/content.json?ref=abc123',
-      'GET /contents/index.html?ref=abc123', // 自己修復チェック(同じコミットで比較)
-      'GET /contents/images?ref=abc123',
-    ], 'index.html が最新なら PUT しない');
+    assert.deepStrictEqual(gh.calls.map((c) => c.method + ' ' + c.route), READ(head, gh.commits[head].tree));
     const html = body.previewHtml;
     assert.ok(html.startsWith('<!DOCTYPE html><html lang="ja"><head>' + BASE_TAG), '<base> は <head> 直後');
     assert.ok(html.includes('<span data-k="hero.heading">大切な家族に</span>'));
     assert.ok(html.includes('<span class="v" data-k="price.a.set">'));
-    assert.ok(html.includes(`src="${RAW}/abc123/images/hero.jpg"`));
-    assert.ok(html.includes(`src="${RAW}/abc123/images/gallery-1.jpg"`));
+    assert.ok(html.includes(`src="${RAW}/${head}/images/hero.jpg"`));
+    assert.ok(html.includes(`src="${RAW}/${head}/images/gallery-1.jpg"`));
     assert.ok(html.includes('src="images/logo.png"'), '編集対象外の画像は相対パスのまま');
   });
 
   await check('GitHub 401 → 502', async () => {
-    fakeGithub({ failGet: { 'data/content.json': [401] } });
-    const res = await handleGetContent(req('GET', '/content', undefined, await auth()), ENV, TEMPLATE);
+    fakeGithub({ fail: { 'GET /contents/data/content.json': [401] } });
+    const res = await getContent();
     assert.strictEqual(res.status, 502);
     assert.strictEqual((await res.json()).error, '更新に失敗しました。管理者に連絡してください');
   });
 
-  const getContent = async () => handleGetContent(req('GET', '/content', undefined, await auth()), ENV, TEMPLATE);
-
-  await check('自己修復: content.json だけ新しく index.html が古い(保存の途中失敗)なら、index.html をPUTして直す', async () => {
+  await check('自己修復: content.json と index.html が食い違っていれば、index.html だけを1コミットで直す', async () => {
     const newer = { ...CONTENT, texts: { ...CONTENT.texts, 'hero.heading': '新しい見出し' } };
-    const gh = fakeGithub({ bodies: { 'data/content.json': Buffer.from(JSON.stringify(newer)) } });
+    const gh = fakeGithub({ bodies: { 'data/content.json': contentJson(newer) } });
     const res = await getContent();
     assert.strictEqual(res.status, 200);
     assert.deepStrictEqual((await res.json()).content, newer);
-    assert.deepStrictEqual(puts(gh), ['/contents/index.html']);
-    const put = gh.calls.find((c) => c.method === 'PUT');
-    assert.strictEqual(put.body.sha, 'index-sha-0');
-    assert.strictEqual(putBody(gh, 'index.html'), renderPublic(TEMPLATE, newer, INITIAL_SHAS));
-    // 直った後はもう PUT しない
-    const gh2Calls = gh.calls.length;
+    assert.deepStrictEqual(writes(gh), COMMIT);
+    assert.deepStrictEqual(gh.changed('commit-0', gh.head), ['index.html']);
+    assert.deepStrictEqual(gh.commits[gh.head].parents, ['commit-0']);
+    assert.strictEqual(gh.file('index.html').toString(), renderPublic(TEMPLATE, newer, INITIAL_SHAS));
+    // 直った後はもう書き込まない
+    const before = gh.calls.length;
     assert.strictEqual((await getContent()).status, 200);
-    assert.deepStrictEqual(gh.calls.slice(gh2Calls).filter((c) => c.method === 'PUT'), []);
+    assert.deepStrictEqual(writes({ calls: gh.calls.slice(before) }), []);
   });
 
-  await check('自己修復: 1MB超の旧 index.html(base64埋め込み版)も object メディアタイプで sha を取って置き換える', async () => {
+  await check('自己修復: 1MB超の旧 index.html(base64埋め込み版)も置き換える', async () => {
     const gh = fakeGithub({ bodies: { 'index.html': Buffer.alloc(1.3 * MB, 'a') } });
-    const res = await getContent();
+    assert.strictEqual((await getContent()).status, 200);
+    assert.strictEqual(patches(gh), 1);
+    assert.strictEqual(gh.file('index.html').toString(), CONSISTENT_INDEX);
+  });
+
+  await check('自己修復が割り込み(422)・GitHubエラー(500)で失敗しても GET は200。再試行せず、割り込んだ保存を上書きしない', async () => {
+    const other = contentJson({ ...CONTENT, texts: { ...CONTENT.texts, 'site.title': '割り込み' } });
+    const gh = fakeGithub({
+      bodies: { 'index.html': Buffer.from('<html>old</html>') },
+      beforePatch: [(g) => g.commit({ 'data/content.json': other })],
+    });
+    const [res, logged] = await quiet(getContent);
     assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(puts(gh), ['/contents/index.html']);
-    assert.strictEqual(gh.calls.find((c) => c.method === 'PUT').body.sha, 'index-sha-0');
-    assert.strictEqual(gh.files['index.html'].body.toString(), CONSISTENT_INDEX);
+    assert.deepStrictEqual((await res.json()).content, CONTENT);
+    assert.strictEqual(patches(gh), 1, '再試行しない');
+    assert.deepStrictEqual(gh.file('data/content.json'), other, '割り込んだ保存がそのまま残る');
+    assert.ok(logged.includes('自動修復に失敗'));
+
+    const gh2 = fakeGithub({ bodies: { 'index.html': Buffer.from('<html>old</html>') }, fail: { 'POST /git/trees': [500] } });
+    const [res2] = await quiet(getContent);
+    assert.strictEqual(res2.status, 200);
+    assert.strictEqual(patches(gh2), 0);
   });
 
-  await check('自己修復のPUTが失敗(409=保存が割り込んだ / 500)しても GET は200。409でも再試行しない(古い内容で上書きしない)', async () => {
-    for (const status of [409, 500]) {
-      const gh = fakeGithub({ bodies: { 'index.html': Buffer.from('<html>old</html>') }, failPut: { 'index.html': [status] } });
-      const origError = console.error;
-      console.error = () => {};
-      const res = await getContent().finally(() => { console.error = origError; });
-      assert.strictEqual(res.status, 200);
-      assert.deepStrictEqual((await res.json()).content, CONTENT);
-      assert.deepStrictEqual(puts(gh), ['/contents/index.html'], String(status));
-    }
-  });
-
-  await check('content.json の中身が空(1MB超)なら明示的なエラーで500', async () => {
-    fakeGithub({ bodies: { 'data/content.json': Buffer.alloc(MB + 1, ' ') } });
-    const origError = console.error;
-    let logged = '';
-    console.error = (...a) => { logged += a.join(' '); };
-    const res = await getContent().finally(() => { console.error = origError; });
-    assert.strictEqual(res.status, 500);
-    assert.ok(logged.includes('大きすぎて'), logged);
+  await check('Worker の gitBlobSha は git hash-object と同じ値', async () => {
+    assert.strictEqual(await workerBlobSha(''), 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391');
+    assert.strictEqual(await workerBlobSha(CONSISTENT_INDEX), gitBlobSha(Buffer.from(CONSISTENT_INDEX)));
   });
 
   console.log('POST /save (texts)');
@@ -317,150 +381,210 @@ async function main() {
     assert.strictEqual((await save({ type: 'texts', values: { 'hero.heading': 'a'.repeat(2000) } })).status, 200);
   });
 
-  await check('content.texts に無いキー(__proto__ 含む)は400、PUTしない', async () => {
+  await check('content.texts に無いキー(__proto__ 含む)は400、書き込まない', async () => {
     for (const values of [{ 'hero.heading': 'ok', 'no.such.key': 'x' }, JSON.parse('{"__proto__":"x"}'), { 'hero': 'x' }]) {
       const gh = fakeGithub();
       const res = await save({ type: 'texts', values });
       assert.strictEqual(res.status, 400);
       assert.strictEqual((await res.json()).error, '不正なリクエストです');
-      assert.deepStrictEqual(puts(gh), []);
+      assert.deepStrictEqual(writes(gh), []);
     }
   });
 
-  await check('正常: content.json → index.html の順にPUT、各PUT直前にsha取得。公開HTMLに注釈なし・?v=付き', async () => {
+  await check('正常: 1コミット(ref の PATCH 1回)で content.json と index.html を同時に更新。公開HTMLに注釈なし・?v=付き', async () => {
     const gh = fakeGithub();
     const res = await save({ type: 'texts', values: { 'hero.heading': '新しい<見出し>\n2行目', 'price.a.set': '¥4,000（¥4,400）' } });
     const body = await res.json();
     assert.strictEqual(res.status, 200, JSON.stringify(body));
     assert.strictEqual(body.ok, true);
     assert.strictEqual(body.message, '保存しました。ホームページには数分後に反映されます');
-    assert.deepStrictEqual(gh.calls.map((c) => c.method + ' ' + c.route), [
-      'GET /contents/data/content.json?ref=main', // キー検証
-      'GET /contents/data/content.json?ref=main', // PUT直前のsha取得
-      'PUT /contents/data/content.json',
-      'GET /contents/images?ref=main', // 画像のblob sha
-      'GET /contents/index.html?ref=main',
-      'PUT /contents/index.html',
-    ]);
-    assert.strictEqual(gh.calls[2].body.sha, 'content-sha-0');
-    assert.strictEqual(gh.calls[5].body.sha, 'index-sha-0');
+    assert.deepStrictEqual(gh.calls.map((c) => c.method + ' ' + c.route), [...READ('commit-0', 'tree-0'), ...COMMIT]);
+    assert.deepStrictEqual(gh.commits[gh.head].parents, ['commit-0']);
+    assert.deepStrictEqual(gh.changed('commit-0', gh.head), ['data/content.json', 'index.html']);
+    assert.ok(gh.commits[gh.head].message.includes('hero.heading'));
 
-    const savedJson = JSON.parse(putBody(gh, 'data/content.json'));
+    const savedJson = JSON.parse(gh.file('data/content.json'));
     assert.strictEqual(savedJson.texts['hero.heading'], '新しい<見出し>\n2行目');
     assert.strictEqual(savedJson.texts['site.title'], 'テストサロン', '他のキーは保持');
     assert.deepStrictEqual(body.content, savedJson);
 
-    const pub = putBody(gh, 'index.html');
+    const pub = gh.file('index.html').toString();
     assert.ok(!pub.includes('data-k'), '公開HTMLに data-k を入れない');
     assert.ok(!pub.includes('<base'), '公開HTMLに <base> を入れない');
     assert.ok(pub.includes('<h1>新しい&lt;見出し&gt;<br>2行目</h1>'));
-    assert.ok(pub.includes('src="images/hero.jpg?v=hero-sha-0"'));
-    assert.ok(pub.includes('src="images/gallery-1.jpg?v=g1-sha-0"'));
+    assert.ok(pub.includes(`src="images/hero.jpg?v=${INITIAL_SHAS['images/hero.jpg']}"`));
+    assert.ok(pub.includes(`src="images/gallery-1.jpg?v=${INITIAL_SHAS['images/gallery-1.jpg']}"`));
     assert.ok(pub.includes('src="images/logo.png"'), '編集対象外の画像はそのまま');
 
     const pv = body.previewHtml;
     assert.ok(pv.includes(BASE_TAG));
     assert.ok(pv.includes('data-k="hero.heading"'));
-    assert.ok(pv.includes(`src="${RAW}/${gh.head}/images/hero.jpg"`), 'previewHtml は最後のコミットSHAの raw URL');
+    assert.ok(pv.includes(`src="${RAW}/${gh.head}/images/hero.jpg"`), 'previewHtml は新しいコミットSHAの raw URL');
     assert.ok(!pv.includes('?v='));
   });
 
-  await check('content.json のPUTが409なら、shaを取り直して1回だけ再PUT', async () => {
-    const gh = fakeGithub({ failPut: { 'data/content.json': [409] } });
+  await check('ref 更新が割り込まれたら(422)最初から1回だけやり直す。割り込んだ保存の内容も残る', async () => {
+    const other = contentJson({ ...CONTENT, texts: { ...CONTENT.texts, 'site.title': '割り込み' } });
+    const gh = fakeGithub({ beforePatch: [(g) => g.commit({ 'data/content.json': other })] });
     const res = await save({ type: 'texts', values: { 'hero.heading': 'x' } });
     assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(puts(gh), ['/contents/data/content.json', '/contents/data/content.json', '/contents/index.html']);
-    const cjCalls = gh.calls.filter((c) => c.route.startsWith('/contents/data/content.json'));
-    assert.deepStrictEqual(cjCalls.map((c) => c.method), ['GET', 'GET', 'PUT', 'GET', 'PUT']);
+    assert.strictEqual(patches(gh), 2);
+    assert.strictEqual(gh.calls.filter((c) => c.route === '/git/ref/heads/main' && c.method === 'GET').length, 2, '最新を読み直す');
+    const saved = JSON.parse(gh.file('data/content.json'));
+    assert.strictEqual(saved.texts['site.title'], '割り込み');
+    assert.strictEqual(saved.texts['hero.heading'], 'x');
+    assert.ok(gh.file('index.html').toString().includes('<title>割り込み</title>'));
+    assert.deepStrictEqual((await res.json()).content, saved);
   });
 
-  await check('既存の index.html が1MB超(旧版)でも上書きできる', async () => {
-    const gh = fakeGithub({ bodies: { 'index.html': Buffer.alloc(1.3 * MB, 'a') } });
-    const res = await save({ type: 'texts', values: { 'hero.heading': 'x' } });
-    assert.strictEqual(res.status, 200, JSON.stringify(await res.clone().json()));
-    const put = gh.calls.find((c) => c.method === 'PUT' && c.route === '/contents/index.html');
-    assert.strictEqual(put.body.sha, 'index-sha-0');
-    assert.ok(gh.files['index.html'].body.toString().includes('<h1>x</h1>'));
-  });
-
-  await check('409/422 が2回続いたら再試行は1回だけで500', async () => {
-    const gh = fakeGithub({ failPut: { 'index.html': [422, 409] } });
-    const res = await save({ type: 'texts', values: { 'hero.heading': 'x' } });
+  await check('割り込みが2回続いたら500(3回目は試さない)', async () => {
+    const other = (t) => (g) => g.commit({ 'data/content.json': contentJson({ ...CONTENT, texts: { ...CONTENT.texts, 'site.title': t } }) });
+    const gh = fakeGithub({ beforePatch: [other('1'), other('2')] });
+    const [res] = await quiet(() => save({ type: 'texts', values: { 'hero.heading': 'x' } }));
     assert.strictEqual(res.status, 500);
     assert.strictEqual((await res.json()).error, '保存できませんでした。しばらくしてからもう一度お試しください');
-    assert.strictEqual(puts(gh).filter((p) => p === '/contents/index.html').length, 2);
+    assert.strictEqual(patches(gh), 2);
+    assert.strictEqual(JSON.parse(gh.file('data/content.json')).texts['site.title'], '2');
   });
 
-  await check('GitHub PUT が401 → 502', async () => {
-    fakeGithub({ failPut: { 'data/content.json': [401] } });
-    const res = await save({ type: 'texts', values: { 'hero.heading': 'x' } });
-    assert.strictEqual(res.status, 502);
-    assert.strictEqual((await res.json()).error, '更新に失敗しました。管理者に連絡してください');
+  await check('GitHub 401(読み込み・書き込みのどこでも)→ 502', async () => {
+    for (const where of ['GET /git/ref', 'POST /git/trees', 'POST /git/commits', 'PATCH /git/refs']) {
+      fakeGithub({ fail: { [where]: [401] } });
+      const res = await save({ type: 'texts', values: { 'hero.heading': 'x' } });
+      assert.strictEqual(res.status, 502, where);
+      assert.strictEqual((await res.json()).error, '更新に失敗しました。管理者に連絡してください');
+    }
   });
 
-  await check('GitHub のその他のエラー(500)→ 500', async () => {
-    fakeGithub({ failGet: { 'data/content.json': [500] } });
-    assert.strictEqual((await save({ type: 'texts', values: { 'hero.heading': 'x' } })).status, 500);
+  await check('GitHub のその他のエラー(500)→ 500、main は動かない', async () => {
+    for (const where of ['GET /contents/', 'POST /git/commits', 'PATCH /git/refs']) {
+      const gh = fakeGithub({ fail: { [where]: [500] } });
+      const [res] = await quiet(() => save({ type: 'texts', values: { 'hero.heading': 'x' } }));
+      assert.strictEqual(res.status, 500, where);
+      assert.strictEqual(gh.head, 'commit-0');
+    }
+  });
+
+  await check('テンプレートが参照するキーが content.json に無いと500、コミットしない', async () => {
+    const broken = { ...CONTENT, texts: { 'site.title': 't', 'hero.heading': 'h' } };
+    const gh = fakeGithub({ bodies: { 'data/content.json': contentJson(broken) } });
+    const [res] = await quiet(() => save({ type: 'texts', values: { 'hero.heading': 'x' } }));
+    assert.strictEqual(res.status, 500);
+    assert.deepStrictEqual(writes(gh), []);
   });
 
   console.log('POST /save (image)');
-  await check('JPEG以外 / data URLでない は400、1MB超は「写真のサイズが大きすぎます」、GitHubに触れない', async () => {
-    const gh = noGithub();
-    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0]);
-    for (const d of [dataUrl(png), 'data:image/jpeg;base64,', 'https://example.com/x.jpg', 'data:image/jpeg,' + JPEG.toString('base64')]) {
-      const res = await save({ type: 'image', key: 'hero', dataUrl: d });
-      assert.strictEqual(res.status, 400);
-      assert.strictEqual((await res.json()).error, '不正なリクエストです');
-    }
-    const big = Buffer.concat([JPEG, Buffer.alloc(MB - JPEG.length + 1)]);
-    const res = await save({ type: 'image', key: 'hero', dataUrl: dataUrl(big) });
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual((await res.json()).error, '写真のサイズが大きすぎます');
-    assert.strictEqual(gh.calls.length, 0);
-    // ちょうど1MBは通る
+  await check('JPEG以外 / data URLでない / 不正な base64(改行・空白・記号・長さ・途中の=)は400、GitHubに触れない', async () => {
+    const b64 = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 5]).toString('base64'); // 正しい base64(12文字)を崩していく
     fakeGithub();
-    const ok = Buffer.concat([JPEG, Buffer.alloc(MB - JPEG.length)]);
-    assert.strictEqual((await save({ type: 'image', key: 'hero', dataUrl: dataUrl(ok) })).status, 200);
+    assert.strictEqual((await save({ type: 'image', key: 'hero', dataUrl: 'data:image/jpeg;base64,' + b64 })).status, 200);
+    const gh = noGithub();
+    const cases = [
+      dataUrl(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0])),
+      'data:image/jpeg;base64,',
+      'https://example.com/x.jpg',
+      'data:image/jpeg,' + b64,
+      'data:image/jpeg;base64,' + b64.slice(0, 4) + '\n' + b64.slice(4),
+      'data:image/jpeg;base64,' + b64.slice(0, 4) + ' ' + b64.slice(4),
+      'data:image/jpeg;base64,' + b64 + '\r\n',
+      'data:image/jpeg;base64,' + b64.slice(0, 4) + '*' + b64.slice(5),
+      'data:image/jpeg;base64,' + b64.slice(0, -1),
+      'data:image/jpeg;base64,' + b64.slice(0, 4) + '====' + b64.slice(8),
+      'data:image/jpeg;base64,' + b64.slice(0, -2) + '=A',
+      'data:image/jpeg;base64,' + b64.slice(0, -4) + '====',
+      'data:image/jpeg;base64,' + b64.replace(/\+|\//g, '-'),
+    ];
+    for (const d of cases) {
+      const res = await save({ type: 'image', key: 'hero', dataUrl: d });
+      assert.strictEqual(res.status, 400, JSON.stringify(d));
+      assert.strictEqual((await res.json()).error, '不正なリクエストです', JSON.stringify(d));
+    }
+    assert.strictEqual(gh.calls.length, 0);
   });
 
-  await check('既存の写真が1MB超(旧上限で保存済み)でも上書きでき、その後も更新し続けられる', async () => {
-    const gh = fakeGithub({ bodies: { 'images/gallery-1.jpg': Buffer.alloc(1.5 * MB, 1) } });
-    for (let i = 0; i < 2; i++) {
-      const before = gh.files['images/gallery-1.jpg'].sha;
-      const res = await save({ type: 'image', key: 'gallery-1', dataUrl: dataUrl(JPEG) });
-      assert.strictEqual(res.status, 200);
-      const put = gh.calls.filter((c) => c.method === 'PUT' && c.route === '/contents/images/gallery-1.jpg').pop();
-      assert.strictEqual(put.body.sha, before);
+  await check('1MB超は長さとパディングから判定して「写真のサイズが大きすぎます」、ちょうど1MBは通る', async () => {
+    const gh = noGithub();
+    for (const size of [MB + 1, MB + 2, MB + 3, 2 * MB]) {
+      const big = Buffer.concat([JPEG, Buffer.alloc(size - JPEG.length)]);
+      const res = await save({ type: 'image', key: 'hero', dataUrl: dataUrl(big) });
+      assert.strictEqual(res.status, 400, String(size));
+      assert.strictEqual((await res.json()).error, '写真のサイズが大きすぎます');
+    }
+    assert.strictEqual(gh.calls.length, 0);
+    for (const size of [MB, MB - 1, MB - 2]) {
+      fakeGithub();
+      const ok = Buffer.concat([JPEG, Buffer.alloc(size - JPEG.length)]);
+      assert.strictEqual((await save({ type: 'image', key: 'hero', dataUrl: dataUrl(ok) })).status, 200, String(size));
     }
   });
 
-  await check('content.images に無いキー(テキストのキー・パス文字列を含む)は400、PUTしない', async () => {
+  await check('写真の base64 はデコード・再エンコードせず、受け取った文字列のまま blob 作成に渡る', async () => {
+    const gh = fakeGithub();
+    const photo = Buffer.concat([JPEG, Buffer.alloc(MB - JPEG.length, 7)]);
+    const b64 = photo.toString('base64');
+    const origAtob = globalThis.atob;
+    const origBtoa = globalThis.btoa;
+    let longest = 0;
+    globalThis.atob = (s) => { longest = Math.max(longest, s.length); return origAtob(s); };
+    globalThis.btoa = (s) => { longest = Math.max(longest, s.length); return origBtoa(s); };
+    let res;
+    try {
+      res = await save({ type: 'image', key: 'hero', dataUrl: 'data:image/jpeg;base64,' + b64 });
+    } finally {
+      globalThis.atob = origAtob;
+      globalThis.btoa = origBtoa;
+    }
+    assert.strictEqual(res.status, 200);
+    assert.ok(longest < 100, `atob/btoa に渡った最長 ${longest} 文字(写真全体を変換していない)`);
+    const blobPost = gh.calls.find((c) => c.method === 'POST' && c.route === '/git/blobs');
+    assert.strictEqual(blobPost.body.content, b64);
+    assert.strictEqual(blobPost.body.encoding, 'base64');
+  });
+
+  await check('content.images に無いキー(テキストのキー・パス文字列を含む)は400、書き込まない', async () => {
     for (const key of ['gallery-9', 'hero.heading', 'images/hero.jpg', '__proto__']) {
       const gh = fakeGithub();
       const res = await save({ type: 'image', key, dataUrl: dataUrl(JPEG) });
       assert.strictEqual(res.status, 400, key);
-      assert.deepStrictEqual(puts(gh), []);
+      assert.deepStrictEqual(writes(gh), []);
     }
   });
 
-  await check('正常: 画像 → index.html の順(content.json は変わらないので書かない)。保存先は content.images[key]、公開HTMLは新しいblob shaで ?v=', async () => {
+  await check('正常: 1コミットで画像と index.html を更新(content.json は変えない)。?v= は新しい blob sha', async () => {
     const gh = fakeGithub();
     const res = await save({ type: 'image', key: 'gallery-1', dataUrl: dataUrl(JPEG) });
     const body = await res.json();
     assert.strictEqual(res.status, 200, JSON.stringify(body));
-    assert.deepStrictEqual(puts(gh), ['/contents/images/gallery-1.jpg', '/contents/index.html']);
-    const imgPut = gh.calls.find((c) => c.method === 'PUT' && c.route === '/contents/images/gallery-1.jpg');
-    assert.strictEqual(imgPut.body.sha, 'g1-sha-0');
-    assert.deepStrictEqual(Buffer.from(imgPut.body.content, 'base64'), JPEG);
+    assert.deepStrictEqual(gh.calls.map((c) => c.method + ' ' + c.route), [...READ('commit-0', 'tree-0'), 'POST /git/blobs', ...COMMIT]);
+    assert.deepStrictEqual(gh.changed('commit-0', gh.head), ['images/gallery-1.jpg', 'index.html']);
+    assert.deepStrictEqual(gh.file('images/gallery-1.jpg'), JPEG);
     assert.deepStrictEqual(body.content, CONTENT);
 
-    const newSha = gh.files['images/gallery-1.jpg'].sha;
-    const pub = putBody(gh, 'index.html');
+    const newSha = gitBlobSha(JPEG);
+    const pub = gh.file('index.html').toString();
     assert.ok(pub.includes(`src="images/gallery-1.jpg?v=${newSha}"`));
-    assert.ok(pub.includes('src="images/hero.jpg?v=hero-sha-0"'));
+    assert.ok(pub.includes(`src="images/hero.jpg?v=${INITIAL_SHAS['images/hero.jpg']}"`));
     assert.ok(!pub.includes('data-k'));
     assert.ok(body.previewHtml.includes(`src="${RAW}/${gh.head}/images/gallery-1.jpg"`));
     assert.ok(body.previewHtml.includes('data-k='));
+  });
+
+  await check('写真の保存が割り込まれたら、blob は作り直さずに最初からやり直す', async () => {
+    const other = contentJson({ ...CONTENT, texts: { ...CONTENT.texts, 'site.title': '割り込み' } });
+    const gh = fakeGithub({ beforePatch: [(g) => g.commit({ 'data/content.json': other })] });
+    const res = await save({ type: 'image', key: 'hero', dataUrl: dataUrl(JPEG) });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(patches(gh), 2);
+    assert.strictEqual(writes(gh).filter((w) => w === 'POST /git/blobs').length, 1);
+    assert.deepStrictEqual(gh.file('images/hero.jpg'), JPEG);
+    assert.deepStrictEqual(gh.file('data/content.json'), other);
+    assert.ok(gh.file('index.html').toString().includes('<title>割り込み</title>'));
+  });
+
+  await check('blob 作成で GitHub 401 → 502', async () => {
+    fakeGithub({ fail: { 'POST /git/blobs': [401] } });
+    const res = await save({ type: 'image', key: 'hero', dataUrl: dataUrl(JPEG) });
+    assert.strictEqual(res.status, 502);
   });
 
   console.log('build-index.js');
