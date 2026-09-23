@@ -1,0 +1,291 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "あしあとさろん システム構成",
+    "output": "architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1380,
+      520
+    ],
+    "views": [
+      {
+        "id": "edit-path",
+        "label": "オーナーが編集する流れ",
+        "focus": [
+          "owner",
+          "admin",
+          "worker",
+          "repo"
+        ],
+        "note": "スマホで保存すると、Worker が認証してから GitHub に1回のコミットで書き込む。"
+      },
+      {
+        "id": "publish-path",
+        "label": "公開される流れ",
+        "focus": [
+          "repo",
+          "pages",
+          "visitors"
+        ],
+        "note": "main が更新されると Cloudflare Pages が自動でビルドし、数分で訪問者に届く。"
+      },
+      {
+        "id": "operations",
+        "label": "開発者の運用",
+        "focus": [
+          "developer",
+          "secrets",
+          "worker",
+          "repo"
+        ],
+        "note": "テンプレートやコードの変更は git push、Worker の設定は wrangler で行う。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "owner",
+      "type": "external",
+      "label": "オーナーのスマホ",
+      "sublabel": "ブラウザ",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "admin",
+      "type": "frontend",
+      "label": "管理画面",
+      "sublabel": "スマホで動作",
+      "pos": [
+        270,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "タップで編集"
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Cloudflare Worker",
+      "sublabel": "認証・保存",
+      "pos": [
+        500,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "secrets",
+      "type": "security",
+      "label": "Worker の秘密情報",
+      "sublabel": "3つの secret",
+      "pos": [
+        500,
+        110
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "database",
+      "label": "GitHub リポジトリ",
+      "sublabel": "main ブランチ",
+      "pos": [
+        730,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "content.json"
+    },
+    {
+      "id": "developer",
+      "type": "external",
+      "label": "開発者の PC",
+      "sublabel": "Claude Code",
+      "pos": [
+        730,
+        110
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "pages",
+      "type": "frontend",
+      "label": "公開サイト・管理画面",
+      "sublabel": "Cloudflare Pages",
+      "pos": [
+        960,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "index.html 43KB"
+    },
+    {
+      "id": "visitors",
+      "type": "external",
+      "label": "お客さま",
+      "sublabel": "スマホ・PC",
+      "pos": [
+        1190,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Cloudflare Workers",
+      "wraps": [
+        "worker",
+        "secrets"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "GitHub",
+      "wraps": [
+        "repo"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Cloudflare Pages",
+      "wraps": [
+        "pages"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "owner-admin",
+      "from": "owner",
+      "to": "admin",
+      "label": "操作",
+      "variant": "emphasis"
+    },
+    {
+      "id": "admin-worker",
+      "from": "admin",
+      "to": "worker",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "worker-repo",
+      "from": "worker",
+      "to": "repo",
+      "label": "コミット",
+      "variant": "emphasis"
+    },
+    {
+      "id": "repo-pages",
+      "from": "repo",
+      "to": "pages",
+      "label": "自動ビルド"
+    },
+    {
+      "id": "pages-visitors",
+      "from": "pages",
+      "to": "visitors",
+      "label": "閲覧"
+    },
+    {
+      "id": "secrets-worker",
+      "from": "secrets",
+      "to": "worker",
+      "label": "参照",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "developer-repo",
+      "from": "developer",
+      "to": "repo",
+      "label": "git push",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "developer-secrets",
+      "from": "developer",
+      "to": "secrets",
+      "label": "wrangler",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "編集の流れ",
+      "items": [
+        "スマホで管理画面を開き、合言葉でログイン（30日有効）",
+        "本物のページが表示され、破線の部分をタップして文章・写真を直す",
+        "Worker がパスワードを確かめ、GitHub に1回のコミットで保存",
+        "写真はスマホ側で1MB以下に縮小してから送る"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "公開の流れ",
+      "items": [
+        "保存すると content.json と index.html が同じコミットで更新される",
+        "Cloudflare Pages が自動でビルドし、数分でお客さまに届く",
+        "開くたびに最新かを確認するので、ホーム画面から開いても古い内容が残らない"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "秘密情報と運用",
+      "items": [
+        "ADMIN_PASSWORD・GITHUB_TOKEN・SESSION_SECRET は Worker にだけ置く",
+        "GitHub トークンは年1回の更新が必要",
+        "テンプレートを変えたら git push と wrangler deploy の両方を行う"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "費用",
+      "items": [
+        "Cloudflare Workers：無料枠（1日10万回まで）",
+        "Cloudflare Pages：無料（ビルドは月500回まで）",
+        "GitHub：公開リポジトリ・API とも無料"
+      ]
+    }
+  ]
+}
