@@ -1,0 +1,10 @@
+name = "ashiato-salon-admin"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# index.template.html をビルド時にテキストとしてバンドルする(テンプレートはstatic、
+# 編集画面からは変更されないため、毎回GitHubから取りに行かずWorker本体に含めてよい)。
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true

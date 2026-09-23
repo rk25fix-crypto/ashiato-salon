@@ -652,31 +652,31 @@
   <div class="wrap">
     <div class="kicker hero-enter">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.5 6H21l-5 4 2 7-6-4-6 4 2-7-5-4h6.5z"/></svg>
-      愛知県豊川市御津町の完全予約制サロン
+      {{text:hero.kicker}}
     </div>
-    <h1 class="hero-enter d2">大切な家族に、<br><span class="accent">やさしく丁寧な</span><br><span class="accent2">トリミングを。</span></h1>
-    <p class="lead hero-enter d2">一頭一頭の気持ちに寄り添いながら、心地よい時間をお届けします。</p>
+    <h1 class="hero-enter d2">{{text:hero.heading.1}}<br><span class="accent">{{text:hero.heading.2}}</span><br><span class="accent2">{{text:hero.heading.3}}</span></h1>
+    <p class="lead hero-enter d2">{{text:hero.lead}}</p>
     <div class="actions hero-enter d3">
-      <a href="#contact" class="btn btn-primary">予約・お問い合わせ →</a>
-      <a href="tel:07016781525" class="btn btn-outline">
+      <a href="#contact" class="btn btn-primary">{{text:hero.btn-contact}}</a>
+      <a href="tel:{{tel:contact.tel}}" class="btn btn-outline">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-        電話をかける
+        {{text:hero.btn-tel}}
       </a>
     </div>
     <a href="#access" class="access-link">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      店舗へのアクセス →
+      {{text:hero.access-link}}
     </a>
   </div>
   <div class="hero-photo">
-    <img data-img="hero" src="images/hero.jpg?v=f3e0d56b2580f9ac8e4f33da4b46bc9fbdd70d51" alt="あしあとさろん 外観">
+    <img data-img="hero" src="{{img:hero}}" alt="あしあとさろん 外観">
     <div class="badge">
       <span class="icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
       </span>
       <span>
-        <strong>完全予約制</strong>
-        <span>ご来店前にお電話でご連絡ください</span>
+        <strong>{{text:hero.badge.title}}</strong>
+        <span>{{text:hero.badge.text}}</span>
       </span>
     </div>
   </div>
@@ -684,29 +684,29 @@
 
 <section class="on-cream" id="about" style="padding-top:80px;">
   <div class="wrap">
-    <div class="eyebrow"><span class="num">01</span>&nbsp;ABOUT US</div>
-    <p class="section-title">あしあとさろんについて</p>
+    <div class="eyebrow"><span class="num">{{text:about.eyebrow-num}}</span>&nbsp;{{text:about.eyebrow}}</div>
+    <p class="section-title">{{text:about.title}}</p>
     <div class="section-head">
-      <h2>小さなあしあとを、<br>大切に受けとめる場所。</h2>
+      <h2>{{text:about.heading}}</h2>
     </div>
-    <p>あしあとさろんは、愛知県豊川市御津町にある完全予約制のトリミングサロンです。わんちゃんと飼い主さまが安心して過ごせるよう、一頭一頭に寄り添いながら、丁寧な施術を心がけています。</p>
-    <div class="about-quote">トリマー歴20年、大手サロン店長歴9年。確かな経験で、一頭一頭に向き合います。</div>
+    <p>{{text:about.text}}</p>
+    <div class="about-quote">{{text:about.quote}}</div>
 
     <div class="feature-list">
       <div class="feature">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21C7 17 3 13.5 3 9.5 3 6.5 5.5 4 8.5 4c1.7 0 3 .8 3.5 2 .5-1.2 1.8-2 3.5-2C18.5 4 21 6.5 21 9.5c0 4-4 7.5-9 11.5z"/></svg>
-        <h3>一頭一頭に寄り添う</h3>
-        <p>その日の様子を見ながら、無理のないペースで。</p>
+        <h3>{{text:about.feature-1.title}}</h3>
+        <p>{{text:about.feature-1.text}}</p>
       </div>
       <div class="feature">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2C8 6 5 9.5 5 13a7 7 0 0014 0c0-3.5-3-7-7-11z"/></svg>
-        <h3>ほっとできる空間</h3>
-        <p>飼い主さまにも、安心していただけるサロンを。</p>
+        <h3>{{text:about.feature-2.title}}</h3>
+        <p>{{text:about.feature-2.text}}</p>
       </div>
       <div class="feature">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l1.9 4.5 4.9.5-3.7 3.3 1.1 4.8L12 13.8 7.8 16.1l1.1-4.8L5.2 8l4.9-.5z"/></svg>
-        <h3>丁寧な仕上がり</h3>
-        <p>清潔感と、その子らしさを大切にします。</p>
+        <h3>{{text:about.feature-3.title}}</h3>
+        <p>{{text:about.feature-3.text}}</p>
       </div>
     </div>
   </div>
@@ -714,25 +714,25 @@
 
 <section class="on-cream" id="gallery-section" style="padding-top:8px;">
   <div class="wrap">
-    <div class="eyebrow"><span>PHOTO</span>&nbsp;SALON GALLERY</div>
-    <p class="section-title">サロンのようす</p>
+    <div class="eyebrow"><span>{{text:gallery.eyebrow-tag}}</span>&nbsp;{{text:gallery.eyebrow}}</div>
+    <p class="section-title">{{text:gallery.title}}</p>
     <div class="section-head">
-      <h2>はじめましての一歩を、<br>安心できる場所から。</h2>
+      <h2>{{text:gallery.heading}}</h2>
     </div>
   </div>
 
   <div class="gallery" id="gallery" role="region" aria-label="サロンの写真ギャラリー">
     <div class="slide" data-idx="0">
-      <img data-img="gallery-1" src="images/gallery-1.jpg?v=bd26eba8f4594e4832b9810dd24d756128f12442" alt="トリミング後の犬" loading="lazy">
-      <div class="cap"><span class="tag">OUR GUEST</span><span class="ttl">その子らしい、かわいい表情に</span></div>
+      <img data-img="gallery-1" src="{{img:gallery-1}}" alt="トリミング後の犬" loading="lazy">
+      <div class="cap"><span class="tag">{{text:gallery.1.tag}}</span><span class="ttl">{{text:gallery.1.caption}}</span></div>
     </div>
     <div class="slide" data-idx="1">
-      <img data-img="gallery-2" src="images/gallery-2.jpg?v=57d9fd7deff099917c9b6a28dea352a51393abb9" alt="サロンの入口" loading="lazy">
-      <div class="cap"><span class="tag">ENTRANCE</span><span class="ttl">お迎えする入口</span></div>
+      <img data-img="gallery-2" src="{{img:gallery-2}}" alt="サロンの入口" loading="lazy">
+      <div class="cap"><span class="tag">{{text:gallery.2.tag}}</span><span class="ttl">{{text:gallery.2.caption}}</span></div>
     </div>
     <div class="slide" data-idx="2">
-      <img data-img="gallery-3" src="images/gallery-3.jpg?v=196d02d121a308357088b65041de2bca97a5c9c1" alt="トリミング道具" loading="lazy">
-      <div class="cap"><span class="tag">TOOLS</span><span class="ttl">丁寧な施術のために</span></div>
+      <img data-img="gallery-3" src="{{img:gallery-3}}" alt="トリミング道具" loading="lazy">
+      <div class="cap"><span class="tag">{{text:gallery.3.tag}}</span><span class="ttl">{{text:gallery.3.caption}}</span></div>
     </div>
   </div>
   <div class="wrap">
@@ -741,118 +741,118 @@
       <span class="dot" data-idx="1"></span>
       <span class="dot" data-idx="2"></span>
     </div>
-    <p class="gallery-hint">左右にスワイプしてご覧いただけます →</p>
+    <p class="gallery-hint">{{text:gallery.hint}}</p>
   </div>
 </section>
 
 <section class="on-deep" id="service">
   <div class="wrap">
-    <div class="eyebrow"><span class="num">02</span>&nbsp;SERVICE</div>
-    <p class="section-title">サービス紹介</p>
+    <div class="eyebrow"><span class="num">{{text:service.eyebrow-num}}</span>&nbsp;{{text:service.eyebrow}}</div>
+    <p class="section-title">{{text:service.title}}</p>
     <div class="section-head">
-      <h2>いつものお手入れを、<br>もっと心地よい時間に。</h2>
+      <h2>{{text:service.heading}}</h2>
     </div>
-    <p style="color:#c9d3cb;font-size:.92rem;">犬種別の料金表を</p>
+    <p style="color:#c9d3cb;font-size:.92rem;">{{text:service.lead}}</p>
     <a href="#menu" class="service-link">
-      料金表を見る
+      {{text:service.link}}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
   </div>
   <div class="service-grid">
     <div class="cell">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v3M5 8l2 2M19 8l-2 2M4 15h16a1 1 0 011 1c0 3-4 5-9 5s-9-2-9-5a1 1 0 011-1z"/></svg>
-      <h3>シャンプー</h3>
-      <p>ふんわり、すっきり。心地よい時間を大切にします。当店は手で洗うことにこだわっています。肌と肌が触れ合うからこそ気づける、肌の状態や体調があります。</p>
+      <h3>{{text:service.1.title}}</h3>
+      <p>{{text:service.1.text}}</p>
     </div>
     <div class="cell">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></svg>
-      <h3>カット</h3>
-      <p>その子らしさに寄り添う、やさしいスタイルづくり。</p>
+      <h3>{{text:service.2.title}}</h3>
+      <p>{{text:service.2.text}}</p>
     </div>
     <div class="cell">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2a8 8 0 00-8 8c0 4 3 6 3 10h10c0-4 3-6 3-10a8 8 0 00-8-8z"/></svg>
-      <h3>お手入れ</h3>
-      <p>爪切り・耳掃除など、日々のケアをお手伝いします。</p>
+      <h3>{{text:service.3.title}}</h3>
+      <p>{{text:service.3.text}}</p>
     </div>
     <div class="cell">
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21C7 17 3 13.5 3 9.5 3 6.5 5.5 4 8.5 4c1.7 0 3 .8 3.5 2 .5-1.2 1.8-2 3.5-2C18.5 4 21 6.5 21 9.5c0 4-4 7.5-9 11.5z"/></svg>
-      <h3>その他メニュー</h3>
-      <p>気になることは、お気軽にご相談ください。</p>
+      <h3>{{text:service.4.title}}</h3>
+      <p>{{text:service.4.text}}</p>
     </div>
   </div>
 </section>
 
 <section class="on-cream" id="menu">
   <div class="wrap">
-    <div class="eyebrow"><span class="num">03</span>&nbsp;PRICE MENU</div>
-    <p class="section-title">トリミング料金表</p>
+    <div class="eyebrow"><span class="num">{{text:menu.eyebrow-num}}</span>&nbsp;{{text:menu.eyebrow}}</div>
+    <p class="section-title">{{text:menu.title}}</p>
     <div class="section-head">
-      <h2>犬種に合わせた、<br>丁寧なトリミングを。</h2>
+      <h2>{{text:menu.heading}}</h2>
     </div>
     <div class="price-intro">
-      <p>表示価格は税込です。</p>
-      <p>毛量・毛玉・被毛の状態などで前後します。</p>
+      <p>{{text:menu.intro-1}}</p>
+      <p>{{text:menu.intro-2}}</p>
     </div>
 
     <div class="price-card">
       <div class="price-card-head">
-        <div class="t"><small>PRICE LIST</small>犬種別 料金表</div>
-        <span class="badge-tax">税抜 (税込)</span>
+        <div class="t"><small>{{text:menu.card-tag}}</small>{{text:menu.card-title}}</div>
+        <span class="badge-tax">{{text:menu.badge-tax}}</span>
       </div>
       <div class="price-table-wrap">
         <table class="price-table">
           <thead>
             <tr>
-              <th>犬種</th>
-              <th>シャンプーセット</th>
-              <th>シャンプーカット</th>
+              <th>{{text:menu.col.breed}}</th>
+              <th>{{text:menu.col.set}}</th>
+              <th>{{text:menu.col.cut}}</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>A. スムースチワワ、スムースダックス、ミニチュアピンシャー</td>
-              <td data-label="シャンプーセット"><span class="v">¥3,400<span class="tax">(¥3,740)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">—</span></td>
+              <td>{{text:price.a.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.a.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.a.cut}}</td>
             </tr>
             <tr>
-              <td>B. ロングチワワ、ロングダックス、ヨークシャテリア、マルチーズ</td>
-              <td data-label="シャンプーセット"><span class="v">¥4,500<span class="tax">(¥4,950)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥6,400<span class="tax">(¥7,040)</span></span></td>
+              <td>{{text:price.b.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.b.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.b.cut}}</td>
             </tr>
             <tr>
-              <td>C. シーズー、ポメラニアン、パグ、ジャックラッセルテリア、パピヨン、狆</td>
-              <td data-label="シャンプーセット"><span class="v">¥5,700<span class="tax">(¥6,270)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥7,600<span class="tax">(¥8,360)</span></span></td>
+              <td>{{text:price.c.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.c.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.c.cut}}</td>
             </tr>
             <tr>
-              <td>D. ペキニーズ、ボストンテリア、フレンチブルドッグ</td>
-              <td data-label="シャンプーセット"><span class="v">¥5,900<span class="tax">(¥6,490)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥7,600<span class="tax">(¥8,360)</span></span></td>
+              <td>{{text:price.d.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.d.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.d.cut}}</td>
             </tr>
             <tr>
-              <td>E. キャバリア、Mシュナウザー、スコッチ</td>
-              <td data-label="シャンプーセット"><span class="v">¥6,000<span class="tax">(¥6,600)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥7,700<span class="tax">(¥8,470)</span></span></td>
+              <td>{{text:price.e.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.e.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.e.cut}}</td>
             </tr>
             <tr>
-              <td>F. トイプードル</td>
-              <td data-label="シャンプーセット"><span class="v">¥6,000<span class="tax">(¥6,600)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥8,000<span class="tax">(¥8,800)</span></span></td>
+              <td>{{text:price.f.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.f.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.f.cut}}</td>
             </tr>
             <tr>
-              <td>G. ビションフリーゼ</td>
-              <td data-label="シャンプーセット"><span class="v">¥7,000<span class="tax">(¥7,700)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥10,000<span class="tax">(¥11,000)</span></span></td>
+              <td>{{text:price.g.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.g.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.g.cut}}</td>
             </tr>
             <tr>
-              <td>H. アメコカ、Eコカ、柴、コーギー</td>
-              <td data-label="シャンプーセット"><span class="v">¥6,400<span class="tax">(¥7,040)</span></span></td>
-              <td data-label="シャンプーカット"><span class="v">¥9,400<span class="tax">(¥10,340)</span></span></td>
+              <td>{{text:price.h.name}}</td>
+              <td data-label="シャンプーセット">{{price:price.h.set}}</td>
+              <td data-label="シャンプーカット">{{price:price.h.cut}}</td>
             </tr>
             <tr>
-              <td>シャンプー＋顔・耳カット</td>
-              <td data-label="シャンプーセット代"><span class="v">+¥1,100<span class="tax">(¥1,210)</span></span></td>
-              <td><span class="v">部分カット 一部分¥600<span class="tax">(¥660)</span></span></td>
+              <td>{{text:price.extra.name}}</td>
+              <td data-label="シャンプーセット代">{{price:price.extra.set}}</td>
+              <td>{{price:price.extra.cut}}</td>
             </tr>
           </tbody>
         </table>
@@ -862,24 +862,24 @@
           <span class="paw">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="5.5" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M12 12c-3.5 0-6 2.2-6 4.5S8.5 20 12 20s6-1.2 6-3.5S15.5 12 12 12z"/></svg>
           </span>
-          <span>単品：爪切りのみ¥500(¥550)、肛門腺のみ¥500(¥550)、ヒゲカット¥500(¥550)、飾りのみ購入¥500(¥550)</span>
+          <span>{{text:price.single}}</span>
         </div>
         <div class="price-note">
           <span class="paw">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="5.5" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M12 12c-3.5 0-6 2.2-6 4.5S8.5 20 12 20s6-1.2 6-3.5S15.5 12 12 12z"/></svg>
           </span>
-          <span>全てのコースに爪切り・耳掃除・肛門腺しぼり・各種バリカン・飾りサービスなどを含みます。ご希望に応じて香水やミストもお付けしています。</span>
+          <span>{{text:menu.note.included}}</span>
         </div>
         <div class="price-note">
           <span class="paw">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="5.5" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M12 12c-3.5 0-6 2.2-6 4.5S8.5 20 12 20s6-1.2 6-3.5S15.5 12 12 12z"/></svg>
           </span>
-          <span>もつれ、毛玉、被毛の量や状態、体重・体格などで料金が多少前後する場合がございます。</span>
+          <span>{{text:menu.note.variance}}</span>
         </div>
         <div class="price-cta">
-          <a href="tel:07016781525" class="btn btn-primary">
+          <a href="tel:{{tel:contact.tel}}" class="btn btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-            お電話で料金を相談する
+            {{text:menu.cta}}
           </a>
         </div>
       </div>
@@ -889,24 +889,24 @@
 
 <section class="on-cream" id="access">
   <div class="wrap">
-    <div class="eyebrow"><span>ACCESS</span></div>
+    <div class="eyebrow"><span>{{text:access.eyebrow}}</span></div>
     <div class="access-card">
-      <h3>あしあとさろん</h3>
-      <address>〒441-0321<br>愛知県豊川市御津町御馬野添112番地2</address>
+      <h3>{{text:access.name}}</h3>
+      <address>{{text:access.postal}}<br>{{text:access.address}}</address>
     </div>
     <div class="info-card">
       <div class="info-row" style="margin-bottom:16px;">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="7" width="18" height="10" rx="2"/><circle cx="6" cy="19" r="1.6"/><circle cx="16" cy="19" r="1.6"/></svg>
         <div>
-          <p style="font-weight:600;margin-bottom:2px;">駐車場</p>
-          <p class="hours-sub">お客様用2台<br>満車の場合は事前にご相談ください</p>
+          <p style="font-weight:600;margin-bottom:2px;">{{text:access.parking.title}}</p>
+          <p class="hours-sub">{{text:access.parking.text}}</p>
         </div>
       </div>
       <div class="info-row">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21C7 17 3 13.5 3 9.5 3 6.5 5.5 4 8.5 4c1.7 0 3 .8 3.5 2 .5-1.2 1.8-2 3.5-2C18.5 4 21 6.5 21 9.5c0 4-4 7.5-9 11.5z"/></svg>
         <div>
-          <p style="font-weight:600;margin-bottom:2px;">送迎</p>
-          <p class="hours-sub">要相談</p>
+          <p style="font-weight:600;margin-bottom:2px;">{{text:access.pickup.title}}</p>
+          <p class="hours-sub">{{text:access.pickup.text}}</p>
         </div>
       </div>
     </div>
@@ -916,21 +916,21 @@
 <section class="on-cream" id="contact">
   <div class="wrap rsv-wrap">
     <svg class="paw-ico" viewBox="0 0 24 24" fill="currentColor"><circle cx="7" cy="8" r="2.2"/><circle cx="12" cy="5.5" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M12 12c-3.5 0-6 2.2-6 4.5S8.5 20 12 20s6-1.2 6-3.5S15.5 12 12 12z"/></svg>
-    <div class="eyebrow"><span>RESERVATION &amp; CONTACT</span></div>
-    <h2>ご予約・お問い合わせ</h2>
-    <p>完全予約制です。ご希望の日にちや気になることを、お気軽にお電話ください。</p>
+    <div class="eyebrow"><span>{{text:contact.eyebrow}}</span></div>
+    <h2>{{text:contact.heading}}</h2>
+    <p>{{text:contact.lead}}</p>
 
     <div class="info-card" style="text-align:left;">
       <div class="info-row">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
         <div>
-          <p class="hours-sub" style="margin-bottom:2px;">営業時間</p>
-          <p class="hours-value">9:00 – 19:00</p>
-          <p class="hours-sub">営業時間外の対応はご相談ください</p>
+          <p class="hours-sub" style="margin-bottom:2px;">{{text:contact.hours.label}}</p>
+          <p class="hours-value">{{text:contact.hours.value}}</p>
+          <p class="hours-sub">{{text:contact.hours.note}}</p>
         </div>
       </div>
       <div class="divider"></div>
-      <p class="hours-sub" style="margin-bottom:8px;">営業日</p>
+      <p class="hours-sub" style="margin-bottom:8px;">{{text:contact.days.label}}</p>
       <div class="week">
         <div class="d open">月<br>営業</div>
         <div class="d open">火<br>営業</div>
@@ -953,28 +953,28 @@
         <span class="map-pin">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--deep)" stroke="var(--paper)" stroke-width="1.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" fill="var(--paper)"/></svg>
         </span>
-        <span class="map-label">あしあとさろん</span>
+        <span class="map-label">{{text:access.name}}</span>
       </a>
       <a class="map-open-btn" href="https://maps.app.goo.gl/owHg8yUPxN7RAYnU6?g_st=ic" target="_blank" rel="noopener noreferrer">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        Googleマップで開く
+        {{text:contact.map-btn}}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
       </a>
     </div>
 
-    <a class="tel-big" href="tel:07016781525">
+    <a class="tel-big" href="tel:{{tel:contact.tel}}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-      070-1678-1525
+      {{text:contact.tel}}
     </a>
-    <p class="tel-note">施術中は電話に出られないことが多く、大変申し訳ございません。留守番電話またはショートメッセージにご用件を残していただければ、後ほど折り返しご連絡いたします。</p>
+    <p class="tel-note">{{text:contact.tel-note}}</p>
     <div class="social-links">
       <a class="social-btn ig" href="https://www.instagram.com/ashiato.saron/" target="_blank" rel="noopener noreferrer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
-        Instagramを見る →
+        {{text:contact.instagram}}
       </a>
       <a class="social-btn line" href="https://lin.ee/vzGm0ko" target="_blank" rel="noopener noreferrer">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-        LINEで予約・相談 →
+        {{text:contact.line}}
       </a>
     </div>
   </div>
@@ -983,10 +983,10 @@
 <section class="qr-section" id="qr">
   <div class="wrap">
     <div class="qr-intro">
-      <div class="eyebrow" style="justify-content:center;"><span>ONLINE</span></div>
-      <p class="section-title">LINE・Instagram</p>
-      <h2>スマホからも、<br>お気軽にご相談ください。</h2>
-      <p>QRコードを読み取ると、それぞれのページへ移動します。ご希望日・犬種・気になることをお送りください。</p>
+      <div class="eyebrow" style="justify-content:center;"><span>{{text:qr.eyebrow}}</span></div>
+      <p class="section-title">{{text:qr.title}}</p>
+      <h2>{{text:qr.heading}}</h2>
+      <p>{{text:qr.text}}</p>
     </div>
     <div class="qr-grid">
       <div class="qr-card line">
@@ -994,14 +994,14 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
         </span>
         <img src="images/line-qr.jpg" alt="LINE QRコード">
-        <p class="label">LINEで予約・相談</p>
+        <p class="label">{{text:qr.line-label}}</p>
       </div>
       <div class="qr-card ig">
         <span class="qr-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
         </span>
         <img src="images/instagram-qr.png" alt="Instagram QRコード">
-        <p class="label">Instagramを見る</p>
+        <p class="label">{{text:qr.instagram-label}}</p>
       </div>
     </div>
   </div>
@@ -1011,8 +1011,8 @@
   <div class="wrap">
     <img class="flogo" src="images/logo.jpg" alt="あしあとさろん ロゴ">
     <address>
-      愛知県豊川市御津町御馬野添112番地2<br>
-      営業日：月・火・金・土　|　営業時間：9:00〜19:00
+      {{text:access.address}}<br>
+      {{text:footer.hours}}
     </address>
     <div class="ficons">
       <a href="https://www.instagram.com/ashiato.saron/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -1025,24 +1025,24 @@
     <section class="license" aria-label="動物取扱業の登録表示">
       <h2>第一種動物取扱業の登録表示</h2>
       <dl>
-        <dt>事業者氏名</dt><dd>中野 聖美</dd>
-        <dt>事業所の名称</dt><dd>あしあとさろん</dd>
-        <dt>事業所の所在地</dt><dd>豊川市御津町御馬野添112番地2</dd>
-        <dt>動物取扱業の種別</dt><dd>保管</dd>
-        <dt>登録番号</dt><dd>豊川第788号</dd>
-        <dt>登録年月日</dt><dd>令和4年4月19日</dd>
-        <dt>有効期間の末日</dt><dd>令和13年4月19日</dd>
-        <dt>動物取扱責任者</dt><dd>森 雅貴</dd>
+        <dt>事業者氏名</dt><dd>{{text:license.operatorName}}</dd>
+        <dt>事業所の名称</dt><dd>{{text:license.businessName}}</dd>
+        <dt>事業所の所在地</dt><dd>{{text:license.address}}</dd>
+        <dt>動物取扱業の種別</dt><dd>{{text:license.handlingType}}</dd>
+        <dt>登録番号</dt><dd>{{text:license.registrationNumber}}</dd>
+        <dt>登録年月日</dt><dd>{{text:license.registrationDate}}</dd>
+        <dt>有効期間の末日</dt><dd>{{text:license.expiryDate}}</dd>
+        <dt>動物取扱責任者</dt><dd>{{text:license.handlerName}}</dd>
       </dl>
     </section>
-    <p class="copyright">© あしあとさろん</p>
+    <p class="copyright">{{text:footer.copyright}}</p>
   </div>
 </footer>
 
 <div class="sticky-cta">
-  <a href="tel:07016781525">
+  <a href="tel:{{tel:contact.tel}}">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-    お電話で予約・お問い合わせ
+    {{text:sticky.tel-label}}
   </a>
 </div>
 
