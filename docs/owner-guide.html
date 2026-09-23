@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ホームページの直し方｜あしあとさろん</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+<style>
+  @page { size: A4; margin: 11mm 12mm; }
+  :root{
+    --deep:#a8506a; --deep-2:#8a3d56; --cream:#fbf1f0; --paper:#fffdfa;
+    --ink:#3f3236; --muted:#6f5058; --brown:#9c5a35; --line:#eddade; --warn:#a63b3b; --warn-bg:#f9e9e7;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:#fff;color:var(--ink);}
+  body{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic","Meiryo",sans-serif;font-size:11.5pt;line-height:1.6;
+       -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .page{width:186mm;margin:0 auto;}
+  p{margin:0;}
+
+  header{display:flex;align-items:center;gap:5mm;padding-bottom:4mm;border-bottom:1.2mm solid var(--deep);}
+  header img{width:17mm;height:17mm;border-radius:3.5mm;object-fit:cover;}
+  header .t{flex:1;}
+  header .shop{font-size:10.5pt;color:var(--muted);font-weight:700;letter-spacing:.08em;}
+  header h1{margin:0;font-size:24pt;font-weight:900;color:var(--deep-2);line-height:1.25;}
+
+  .intro{display:flex;gap:6mm;align-items:center;margin:5mm 0 4mm;padding:4mm 5mm;background:var(--cream);border-radius:4mm;}
+  .intro .qr{width:30mm;height:30mm;flex-shrink:0;background:#fff;border-radius:2mm;}
+  .intro .qr img{width:100%;height:100%;display:block;}
+  .intro .lead{font-size:12.5pt;font-weight:700;margin-bottom:1.5mm;}
+  .intro .url{font-size:12pt;font-weight:700;color:var(--deep-2);word-break:break-all;}
+  .intro .note{font-size:10pt;color:var(--muted);margin-top:1.5mm;}
+
+  ol.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3.5mm;}
+  .step{border:0.5mm solid var(--line);border-radius:4mm;padding:3.5mm 4mm 4mm;display:flex;gap:3mm;}
+  .num{width:10mm;height:10mm;flex-shrink:0;border-radius:50%;background:var(--deep);color:#fff;font-weight:900;font-size:15pt;
+       display:flex;align-items:center;justify-content:center;}
+  .step h2{margin:0 0 1.2mm;font-size:14pt;font-weight:900;color:var(--deep-2);}
+  .step p{font-size:11pt;}
+  .step p + p{margin-top:1.2mm;}
+  .step .sub{font-size:10pt;color:var(--muted);}
+  b{color:var(--deep-2);}
+  .dash{display:inline-block;border:0.45mm dashed var(--brown);border-radius:1mm;padding:0 1.5mm;background:#fff;font-weight:700;}
+  .btn{display:inline-block;background:var(--deep);color:#fff;border-radius:1.5mm;padding:0 2mm;font-weight:700;font-size:10pt;}
+
+  .boxes{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm;margin-top:3.5mm;}
+  .box{border-radius:4mm;padding:3.5mm 4.5mm;}
+  .box h3{margin:0 0 1.5mm;font-size:12.5pt;font-weight:900;}
+  .box ul{margin:0;padding-left:4.5mm;}
+  .box li{font-size:10.5pt;margin-bottom:1mm;}
+  .tips{background:var(--cream);}
+  .tips h3{color:var(--deep-2);}
+  .trouble{background:var(--warn-bg);border:0.5mm solid var(--warn);}
+  .trouble h3{color:var(--warn);}
+  .msg{font-weight:700;}
+
+  footer{margin-top:3.5mm;display:flex;gap:4mm;align-items:stretch;}
+  .contact{flex:1;border:0.5mm solid var(--deep);border-radius:4mm;padding:3mm 4.5mm;}
+  .contact .label{font-size:10pt;color:var(--muted);font-weight:700;}
+  .contact .name{margin-top:1.5mm;font-size:15pt;font-weight:900;color:var(--deep-2);}
+  .secret{flex:1;border-radius:4mm;padding:3mm 4.5mm;background:#f4f1f2;font-size:10pt;}
+  .secret b{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <img src="../images/logo.jpg" alt="">
+    <div class="t">
+      <p class="shop">あしあとさろん　オーナーさま用</p>
+      <h1>スマホでホームページを直す方法</h1>
+    </div>
+  </header>
+
+  <section class="intro">
+    <div class="qr"><img src="data:image/png;base64,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" alt="管理画面のQRコード"></div>
+    <div>
+      <p class="lead">スマホのカメラで、左のQRコードを読み取ってください</p>
+      <p class="url">https://ashiato-salon.pages.dev/admin/</p>
+      <p class="note">最初の1回だけ、開いた画面で「共有」ボタン（□に↑）→「ホーム画面に追加」を押すと、次からはアイコンから開けます。</p>
+    </div>
+  </section>
+
+  <ol class="steps">
+    <li class="step"><div class="num">1</div><div>
+      <h2>合言葉を入れる</h2>
+      <p>別にお渡しした<b>合言葉</b>を入れて、<span class="btn">ログイン</span>を押します。</p>
+      <p class="sub">「表示」を押すと、打った文字を確かめられます。一度入れれば、<b>30日間</b>は入れ直さなくて大丈夫です。</p>
+    </div></li>
+    <li class="step"><div class="num">2</div><div>
+      <h2>直したい所をタップ</h2>
+      <p>いつものホームページが出ます。<span class="dash">点線で囲まれた所</span>が直せる場所です。</p>
+      <p class="sub">文字も、料金も、写真も、タップすると下から編集画面が出てきます。</p>
+    </div></li>
+    <li class="step"><div class="num">3</div><div>
+      <h2>直して「保存する」</h2>
+      <p><b>文字</b>：書き直して <span class="btn">保存する</span></p>
+      <p><b>写真</b>：「写真を選ぶ」でスマホの写真を選んで <span class="btn">保存する</span></p>
+      <p class="sub">写真は自動で軽くしてから送るので、そのままで大丈夫です。</p>
+    </div></li>
+    <li class="step"><div class="num">4</div><div>
+      <h2>数分待つ</h2>
+      <p>「<b>保存しました</b>」と出たら完了です。</p>
+      <p class="sub">お客さまが見るホームページには、<b>数分後</b>に反映されます。すぐに変わらなくても、もう一度保存しなくて大丈夫です。</p>
+    </div></li>
+  </ol>
+
+  <div class="boxes">
+    <section class="box tips">
+      <h3>覚えておくと安心</h3>
+      <ul>
+        <li><b>料金</b>は「¥3,400（¥3,740）」のように、（ ）の中に税込の金額を書きます。</li>
+        <li><b>動物取扱業の登録表示</b>は、保健所の<b>登録証のとおり</b>に書いてください。</li>
+        <li>書きかけのまま閉じようとすると「捨てますか？」と確認が出ます。</li>
+        <li>何回直しても大丈夫です。間違えても前の内容は記録されているので、ご連絡いただければ元に戻せます。</li>
+      </ul>
+    </section>
+    <section class="box trouble">
+      <h3>困ったとき</h3>
+      <ul>
+        <li><span class="msg">「もう一度ログインしてください」</span><br>→ 合言葉を入れ直してください。</li>
+        <li><span class="msg">「保存できませんでした」</span><br>→ 少し待ってから、もう一度「保存する」。</li>
+        <li><span class="msg">「管理者に連絡してください」</span><br>→ 下の連絡先へご連絡ください。</li>
+        <li><b>スマホをなくした・合言葉を人に知られた</b>ときも、すぐにご連絡ください。</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>
+    <div class="contact">
+      <p class="label">困ったときの連絡先</p>
+      <p class="name">LINE：けんじ</p>
+    </div>
+    <div class="secret">
+      <b>合言葉について</b><br>
+      合言葉はこの紙には書かず、別の場所にしまってください。人に教えないでください。
+    </div>
+  </footer>
+</div>
+</body>
+</html>
