@@ -1101,4 +1101,20 @@
     io.observe(el);
   });
 })();
+
+// ホーム画面から開いたページは閉じても裏で残り、次に開いた時に古い内容のまま表示される。
+// しばらく経ってから画面に戻ってきた時は読み込み直して、オーナーが更新した最新の内容を出す。
+(function(){
+  var loadedAt = Date.now();
+  var STALE_MS = 5 * 60 * 1000;
+  function reloadIfStale(){
+    if(Date.now() - loadedAt > STALE_MS) location.reload();
+  }
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState === 'visible') reloadIfStale();
+  });
+  window.addEventListener('pageshow', function(e){
+    if(e.persisted) reloadIfStale();
+  });
+})();
 </script>
