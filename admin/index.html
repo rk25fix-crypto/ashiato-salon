@@ -219,7 +219,7 @@
   <div class="frame-area">
     <!-- allow-scripts は付けない: プレビュー内のスクリプトを親(ログイン情報を持つ)と同じオリジンで動かさないため。
          allow-same-origin は親から contentDocument を触る(クリック検出・スタイル注入・スクロール復元)のに必要 -->
-    <iframe id="preview" title="ホームページのプレビュー" sandbox="allow-same-origin"></iframe>
+    <iframe id="preview" title="ホームページのプレビュー"></iframe>
     <div class="state-block" id="loading-state">
       <div class="spinner" aria-hidden="true"></div>
       <p class="state-text">読み込み中…</p>
@@ -413,7 +413,7 @@
     '@keyframes __saved-img{0%,40%{outline:6px solid rgba(79,138,99,1);}}' +
     '*,*::before,*::after{transition:none!important;animation-duration:0s!important;animation-delay:0s!important;scroll-behavior:auto!important;}' +
     '.__just-saved{animation-duration:1.6s!important;}' +
-    // プレビューではページのスクリプトを動かさない(sandbox)ので、スクロールに連動するギャラリーの丸印は止まったままになる。
+    // プレビューではページのスクリプトを動かさない(CSP)ので、スクロールに連動するギャラリーの丸印は止まったままになる。
     // 誤解を招かないよう隠す(場所は空けたままにしてレイアウトは変えない)
     '#dots{visibility:hidden;}';
 
@@ -435,7 +435,9 @@
       }
       setState('ready');
     };
-    frame.srcdoc = html;
+    // プレビュー内のスクリプトは CSP で止める。sandbox 属性は使わない:
+    // iOS の WebKit は sandbox(allow-scripts なし)の中では、親が登録したクリック処理まで呼ばなくなり、タップしても編集できなくなるため。
+    frame.srcdoc = '<meta http-equiv="Content-Security-Policy" content="script-src \'none\'; object-src \'none\'">' + html;
   }
 
   function applyScroll(frame, restore){
