@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #FBF1F0;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="30"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div
+        id="el-01-title"
+        class="scene"
+        data-composition-id="01-title"
+        data-composition-src="compositions/frames/01-title.html"
+        data-start="0"
+        data-duration="4"
+        data-track-index="0"
+      ></div>
+
+      <div
+        id="el-02-top"
+        class="scene"
+        data-composition-id="02-top"
+        data-composition-src="compositions/frames/02-top.html"
+        data-start="3.5"
+        data-duration="6"
+        data-track-index="1"
+      ></div>
+
+      <div
+        id="el-03-gallery"
+        class="scene"
+        data-composition-id="03-gallery"
+        data-composition-src="compositions/frames/03-gallery.html"
+        data-start="9.5"
+        data-duration="5"
+        data-track-index="0"
+      ></div>
+
+      <div
+        id="el-04-service-price"
+        class="scene"
+        data-composition-id="04-service-price"
+        data-composition-src="compositions/frames/04-service-price.html"
+        data-start="14.5"
+        data-duration="6"
+        data-track-index="1"
+      ></div>
+
+      <div
+        id="el-05-reserve"
+        class="scene"
+        data-composition-id="05-reserve"
+        data-composition-src="compositions/frames/05-reserve.html"
+        data-start="20.5"
+        data-duration="5.5"
+        data-track-index="0"
+      ></div>
+
+      <div
+        id="el-06-end"
+        class="scene"
+        data-composition-id="06-end"
+        data-composition-src="compositions/frames/06-end.html"
+        data-start="25.5"
+        data-duration="4.5"
+        data-track-index="1"
+      ></div>
+
+      <!-- BGM: original gentle-acoustic score (compose.py → fluidsynth), continuous at the root; fade in 0–0.3s, fade out 28.3–30s -->
+      <audio
+        id="el-bgm"
+        src="assets/audio/bgm.wav"
+        data-start="0"
+        data-duration="30"
+        data-track-index="11"
+        data-volume="0.9"
+        data-automation="{&quot;version&quot;:1,&quot;lanes&quot;:[{&quot;target&quot;:&quot;volume&quot;,&quot;points&quot;:[{&quot;t&quot;:0,&quot;v&quot;:0},{&quot;t&quot;:0.3,&quot;v&quot;:1},{&quot;t&quot;:28.3,&quot;v&quot;:1},{&quot;t&quot;:30,&quot;v&quot;:0}]}]}"
+      ></audio>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+      // ── frame transitions (injected by transitions.mjs) ──
+      (function () { var tl = window.__timelines["main"];
+        tl.to("#el-01-title", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 3.5);
+        tl.fromTo("#el-02-top", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 3.5);
+        tl.to("#el-05-reserve", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 25.5);
+        tl.fromTo("#el-06-end", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 25.5);
+        tl.to({}, { duration: 30 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
+      })();
+    </script>
+  </body>
+</html>

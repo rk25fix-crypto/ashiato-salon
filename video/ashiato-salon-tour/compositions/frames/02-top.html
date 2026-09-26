@@ -1,0 +1,240 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="02-top"
+    data-start="0"
+    data-duration="6.5"
+    data-width="1080"
+    data-height="1920"
+  >
+    <style data-fonts="shared">
+      @font-face { font-family: "Noto Serif JP"; src: url("assets/fonts/NotoSerifJP-600.woff2") format("woff2"); font-weight: 400 900; font-style: normal; }
+      @font-face { font-family: "Noto Sans JP"; src: url("assets/fonts/NotoSansJP-400.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+    </style>
+    <style>
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      [id="02-top-bg"] {
+        position: absolute;
+        inset: 0;
+        background: #fbf1f0;
+      }
+      [id="02-top-stage"] {
+        position: absolute;
+        inset: 0;
+      }
+      /* soft deep-rose blob: 820px circle centred at (540, 940) */
+      [id="02-top-blob"] {
+        position: absolute;
+        left: 130px;
+        top: 530px;
+        width: 820px;
+        height: 820px;
+        border-radius: 50%;
+        background: #a8506a;
+        opacity: 0.12;
+      }
+      /* phone: 16px ink bezel around the 720x1280 screen at (180, 300) */
+      [id="02-top-phone"] {
+        position: absolute;
+        left: 164px;
+        top: 284px;
+        width: 752px;
+        height: 1312px;
+        border-radius: 52px;
+        background: #4a3a3f;
+      }
+      [id="02-top-screen"] {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        width: 720px;
+        height: 1280px;
+        border-radius: 36px;
+        overflow: hidden;
+        background: #fbf1f0;
+      }
+      [id="02-top-plate"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 720px;
+        height: 16327.33px;
+      }
+      [id="02-top-plate"] img {
+        display: block;
+        width: 720px;
+        height: 16327.33px;
+      }
+      /* headline zone above the phone */
+      [id="02-top-head"] {
+        position: absolute;
+        left: 72px;
+        top: 104px;
+        width: 936px;
+        height: 156px;
+      }
+      [id="02-top-eyebrow-row"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 936px;
+        height: 56px;
+      }
+      [class~="02-top-eyebrow"] {
+        position: absolute;
+        left: 0;
+        top: 12px;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        font-size: 26px;
+        line-height: 32px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+      [id="02-top-rule"] {
+        position: absolute;
+        left: 176px;
+        top: 27px;
+        width: 760px;
+        height: 2px;
+        background: #a8506a;
+        transform-origin: 0 50%;
+      }
+      [class~="02-top-headline"] {
+        position: absolute;
+        left: 0;
+        top: 64px;
+        font-family: "Noto Serif JP", serif;
+        font-weight: 600;
+        font-size: 64px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+    </style>
+
+    <div id="02-top-bg" class="clip" data-start="0" data-duration="6.5" data-track-index="0"></div>
+
+    <div id="02-top-stage" class="clip" data-start="0" data-duration="6.5" data-track-index="1">
+      <div id="02-top-blob"></div>
+
+      <div id="02-top-phone">
+        <div id="02-top-screen">
+          <div id="02-top-plate" data-layout-allow-overflow>
+            <img src="assets/mobile-full-1080.png" alt="" />
+          </div>
+        </div>
+      </div>
+
+      <div id="02-top-head">
+        <div id="02-top-eyebrow-row">
+          <div id="02-top-eyebrow-a" class="02-top-eyebrow">TOP</div>
+          <div id="02-top-eyebrow-b" class="02-top-eyebrow">ABOUT</div>
+          <div id="02-top-rule"></div>
+        </div>
+        <div id="02-top-head-a" class="02-top-headline">サイトはこんな感じ</div>
+        <div id="02-top-head-b" class="02-top-headline">まるい窓が目印のお店</div>
+        <div id="02-top-head-c" class="02-top-headline">トリマー歴20年の安心</div>
+      </div>
+    </div>
+
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+        var blob = $("02-top-blob");
+        var phone = $("02-top-phone");
+        var plate = $("02-top-plate");
+        var ebA = $("02-top-eyebrow-a");
+        var ebB = $("02-top-eyebrow-b");
+        var rule = $("02-top-rule");
+        var hA = $("02-top-head-a");
+        var hB = $("02-top-head-b");
+        var hC = $("02-top-head-c");
+
+        // plate offsets: plate px x 2/3 = screen px
+        var OFF_STORE = -1100 * (2 / 3); // -733.33
+        var OFF_ABOUT = -2971 * (2 / 3); // -1980.67 (handoff_out)
+
+        var tl = gsap.timeline({ paused: true });
+
+        tl.set(plate, { y: 0 }, 0);
+
+        // Scene 1 (0.0-1.0): blob scales up behind, phone slides up from +160 and settles
+        tl.fromTo(
+          blob,
+          { scale: 0.55 },
+          { scale: 1, duration: 0.9, ease: "back.out(1.4)" },
+          0,
+        );
+        tl.fromTo(phone, { y: 160 }, { y: 0, duration: 1.0, ease: "power3.out" }, 0);
+        tl.fromTo(phone, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power1.out" }, 0);
+
+        // Scene 2 (1.0-2.4): eyebrow TOP + headline reveal (staggered fade + slide-up), hold
+        tl.fromTo(
+          ebA,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" },
+          1.0,
+        );
+        tl.fromTo(
+          rule,
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.7, ease: "power3.out" },
+          1.05,
+        );
+        tl.fromTo(
+          hA,
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" },
+          1.15,
+        );
+
+        // Scene 3 (2.4-3.6): plate glides to offset 1100 (storefront); headline swaps
+        tl.to(plate, { y: OFF_STORE, duration: 1.0, ease: "power3.out" }, 2.4);
+        tl.to(hA, { opacity: 0, y: -36, duration: 0.28, ease: "power2.in" }, 2.45);
+        tl.fromTo(
+          hB,
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          2.7,
+        );
+
+        // Scene 4 (3.6-5.0): plate glides to offset 2971 (ABOUT); eyebrow + headline swap
+        tl.to(plate, { y: OFF_ABOUT, duration: 1.2, ease: "power3.out" }, 3.6);
+        tl.to(ebA, { opacity: 0, y: -20, duration: 0.24, ease: "power2.in" }, 3.65);
+        tl.fromTo(
+          ebB,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
+          3.9,
+        );
+        tl.to(hB, { opacity: 0, y: -36, duration: 0.28, ease: "power2.in" }, 3.7);
+        tl.fromTo(
+          hC,
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          3.95,
+        );
+
+        // Scene 5 (5.0-6.0): hold still - handoff state; pad timeline to full duration
+        tl.set(plate, { y: OFF_ABOUT }, 5.0);
+        tl.to({}, { duration: 0.001 }, 5.999);
+
+        window.__timelines["02-top"] = tl;
+      })();
+    </script>
+  </div>
+</template>

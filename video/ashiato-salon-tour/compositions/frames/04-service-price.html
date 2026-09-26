@@ -1,0 +1,220 @@
+<template>
+  <script src="assets/vendor/gsap.min.js"></script>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      font-family: "Noto Sans JP", sans-serif;
+      color: #4a3a3f;
+    }
+    .\30 4-service-price-bg {
+      position: absolute;
+      inset: 0;
+      background: #fbf1f0;
+    }
+    .\30 4-service-price-stage {
+      position: absolute;
+      inset: 0;
+    }
+    /* soft deep-rose blob behind the phone — shared across phone frames 02–05 */
+    #\30 4-service-price-blob {
+      position: absolute;
+      left: 130px; /* 540 - 410 */
+      top: 530px; /* 940 - 410 */
+      width: 820px;
+      height: 820px;
+      border-radius: 50%;
+      background: #a8506a;
+      opacity: 0.12;
+    }
+    /* phone device — ink bezel 16px around the 720×1280 screen */
+    #\30 4-service-price-bezel {
+      position: absolute;
+      left: 164px;
+      top: 284px;
+      width: 752px;
+      height: 1312px;
+      border-radius: 52px;
+      background: #4a3a3f;
+    }
+    #\30 4-service-price-screen {
+      position: absolute;
+      left: 180px;
+      top: 300px;
+      width: 720px;
+      height: 1280px;
+      border-radius: 36px;
+      overflow: hidden;
+      background: #fffdfa;
+    }
+    #\30 4-service-price-plate-layer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 720px;
+    }
+    #\30 4-service-price-plate {
+      display: block;
+      width: 720px;
+      height: auto;
+    }
+    /* headline block above the phone */
+    #\30 4-service-price-eyebrow-row {
+      position: absolute;
+      left: 72px;
+      right: 72px;
+      top: 104px;
+      height: 56px;
+    }
+    #\30 4-service-price-eyebrow-rule {
+      position: absolute;
+      left: 176px;
+      right: 0;
+      top: 27px;
+      height: 2px;
+      background: #a8506a;
+    }
+    .\30 4-service-price-eyebrow {
+      position: absolute;
+      left: 0;
+      top: 12px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      line-height: 32px;
+      text-transform: uppercase;
+      color: #a8506a;
+      white-space: nowrap;
+    }
+    #\30 4-service-price-headline-box {
+      position: absolute;
+      left: 72px;
+      right: 40px;
+      top: 168px;
+      height: 84px;
+    }
+    .\30 4-service-price-headline {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-family: "Noto Serif JP", serif;
+      font-size: 64px;
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #a8506a;
+      white-space: nowrap;
+    }
+    /* paper chip that pops on the eyebrow rule */
+    #\30 4-service-price-chip {
+      position: absolute;
+      right: 72px;
+      top: 100px;
+      padding: 10px 24px 12px;
+      border: 2px solid #a8506a;
+      border-radius: 8px;
+      background: #fffdfa;
+      font-family: "Noto Sans JP", sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 40px;
+      color: #8a3d56;
+      white-space: nowrap;
+      transform-origin: 50% 50%;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-service-price" data-width="1080" data-height="1920" data-start="0" data-duration="6.5">
+    <style data-fonts="shared">
+      @font-face { font-family: "Noto Serif JP"; src: url("assets/fonts/NotoSerifJP-600.woff2") format("woff2"); font-weight: 400 900; font-style: normal; }
+      @font-face { font-family: "Noto Sans JP"; src: url("assets/fonts/NotoSansJP-400.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+    </style>
+    <div class="clip 04-service-price-bg" data-start="0" data-duration="6.5" data-track-index="0"></div>
+
+    <div class="clip 04-service-price-stage" data-start="0" data-duration="6.5" data-track-index="1">
+      <div id="04-service-price-blob"></div>
+      <div id="04-service-price-bezel"></div>
+      <div id="04-service-price-screen">
+        <div id="04-service-price-plate-layer" data-layout-allow-overflow>
+          <img id="04-service-price-plate" src="assets/mobile-full-1080.png" alt="" width="720" />
+        </div>
+      </div>
+
+      <div id="04-service-price-eyebrow-row">
+        <div id="04-service-price-eyebrow-rule"></div>
+        <div class="04-service-price-eyebrow" id="04-service-price-eb-gallery">GALLERY</div>
+        <div class="04-service-price-eyebrow" id="04-service-price-eb-service">SERVICE</div>
+        <div class="04-service-price-eyebrow" id="04-service-price-eb-price">PRICE</div>
+      </div>
+
+      <div id="04-service-price-headline-box">
+        <div class="04-service-price-headline" id="04-service-price-hl-gallery">サロンのようす</div>
+        <div class="04-service-price-headline" id="04-service-price-hl-service">シャンプー・カット・お手入れ</div>
+        <div class="04-service-price-headline" id="04-service-price-hl-price">犬種別の料金表つき</div>
+      </div>
+
+      <div id="04-service-price-chip">手洗いにこだわり</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var ID = "04-service-price";
+      var $ = function (s) { return document.getElementById(ID + "-" + s); };
+      var S = 2 / 3; // plate px -> screen px
+      var py = function (platePx) { return -platePx * S; };
+
+      var plate = $("plate-layer");
+      var ebG = $("eb-gallery"), ebS = $("eb-service"), ebP = $("eb-price");
+      var hlG = $("hl-gallery"), hlS = $("hl-service"), hlP = $("hl-price");
+      var chip = $("chip");
+
+      var tl = gsap.timeline({ paused: true });
+
+      // ── handoff_in state (t=0): plate at 5588, GALLERY / サロンのようす ──
+      tl.set(plate, { y: py(5588) }, 0);
+      tl.set([ebG, hlG], { opacity: 1, y: 0 }, 0);
+      tl.set([ebS, hlS, ebP, hlP], { opacity: 0, y: 24 }, 0);
+      tl.set(chip, { opacity: 0, scale: 0 }, 0);
+
+      // ── Scene 1 (0.0–1.6s): plate glides 5588 → 7552 into SERVICE ──
+      tl.fromTo(plate, { y: py(5588) }, { y: py(7552), duration: 1.6, ease: "power2.inOut" }, 0);
+
+      // headline swap → SERVICE (old out-up, new in-up)
+      tl.fromTo([ebG, hlG], { opacity: 1, y: 0 }, { opacity: 0, y: -24, duration: 0.25, ease: "power2.in", stagger: 0.03, immediateRender: false }, 0.6);
+      tl.fromTo([ebS, hlS], { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.05, immediateRender: false }, 0.82);
+
+      // ── Scene 2 (1.6–2.6s): hold; paper chip pops (low overshoot) ──
+      tl.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: "back.out(1.4)", immediateRender: false }, 1.7);
+
+      // ── Scene 3 (2.6–4.4s): plate glides 7552 → 11000; chip fades; swap → PRICE ──
+      // ease-in (power 2.3) whose end velocity (~4400 plate px/s) matches Scene 4's power1.out start velocity,
+      // so the scroll continues through 4.4s without a stall.
+      var kA = 2.3;
+      tl.fromTo(plate, { y: py(7552) }, {
+        y: py(11000),
+        duration: 1.8,
+        immediateRender: false,
+        ease: function (p) { return Math.pow(p, kA); }
+      }, 2.6);
+      tl.fromTo(chip, { opacity: 1 }, { opacity: 0, duration: 0.3, ease: "power1.out", immediateRender: false }, 2.7);
+
+      tl.fromTo([ebS, hlS], { opacity: 1, y: 0 }, { opacity: 0, y: -24, duration: 0.25, ease: "power2.in", stagger: 0.03, immediateRender: false }, 3.62);
+      tl.fromTo([ebP, hlP], { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.05, immediateRender: false }, 3.84);
+
+      // ── Scene 4 (4.4–5.4s): gentle continued read through the price rows 11000 → 13200 ──
+      tl.fromTo(plate, { y: py(11000) }, { y: py(13200), duration: 1.0, ease: "power1.out", immediateRender: false }, 4.4);
+
+      // ── Scene 5 (5.4–6.0s): hold on handoff_out state (plate 13200, PRICE) ──
+      tl.set({}, {}, 6.0);
+
+      window.__timelines[ID] = tl;
+    })();
+  </script>
+</template>

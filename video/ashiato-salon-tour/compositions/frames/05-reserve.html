@@ -1,0 +1,303 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="05-reserve"
+    data-start="0"
+    data-duration="5.5"
+    data-width="1080"
+    data-height="1920"
+  >
+    <style data-fonts="shared">
+      @font-face { font-family: "Noto Serif JP"; src: url("assets/fonts/NotoSerifJP-600.woff2") format("woff2"); font-weight: 400 900; font-style: normal; }
+      @font-face { font-family: "Noto Sans JP"; src: url("assets/fonts/NotoSansJP-400.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+    </style>
+    <style>
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+
+      #root [id="05-reserve-bg"] {
+        position: absolute;
+        inset: 0;
+        background: #fbf1f0;
+      }
+
+      /* soft deep-rose blob behind the phone, centered at (540, 940) */
+      #root [id="05-reserve-blob"] {
+        position: absolute;
+        left: 130px;
+        top: 530px;
+        width: 820px;
+        height: 820px;
+        border-radius: 50%;
+        background: #a8506a;
+        opacity: 0.12;
+        transform-origin: 50% 50%;
+      }
+
+      /* phone device: ink bezel 16px around the 720x1280 screen at (180, 300) */
+      #root [id="05-reserve-phone"] {
+        position: absolute;
+        left: 164px;
+        top: 284px;
+        width: 752px;
+        height: 1312px;
+        border-radius: 52px;
+        background: #4a3a3f;
+      }
+      #root [id="05-reserve-screen"] {
+        position: absolute;
+        left: 16px;
+        top: 16px;
+        width: 720px;
+        height: 1280px;
+        border-radius: 36px;
+        overflow: hidden;
+        background: #fbf1f0;
+      }
+      #root [id="05-reserve-plate"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 720px;
+        height: 16327.33px;
+        will-change: transform;
+      }
+      #root [id="05-reserve-plate"] img {
+        display: block;
+        width: 720px;
+        height: 16327.33px;
+      }
+
+      /* headline zone above the phone — matches frames 02–04 (left-aligned eyebrow + rule, rose headline) */
+      #root [id="05-reserve-heads"] {
+        position: absolute;
+        left: 72px;
+        top: 104px;
+        width: 936px;
+        height: 156px;
+      }
+      #root [id="05-reserve-rule"] {
+        position: absolute;
+        left: 176px;
+        right: 0;
+        top: 27px;
+        height: 2px;
+        background: #a8506a;
+      }
+      #root [class~="05-reserve-head"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 936px;
+        height: 156px;
+      }
+      #root [class~="05-reserve-eyebrow"] {
+        position: absolute;
+        left: 0;
+        top: 12px;
+        padding-right: 20px;
+        background: #fbf1f0;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-weight: 600;
+        font-size: 26px;
+        line-height: 32px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+      #root [class~="05-reserve-title"] {
+        position: absolute;
+        left: 0;
+        top: 64px;
+        font-family: "Noto Serif JP", serif;
+        font-weight: 600;
+        font-size: 64px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+
+      /* paper chip on the eyebrow rule, right side (same slot as frame 04's chip) */
+      #root [class~="05-reserve-chip"] {
+        position: absolute;
+        right: 72px;
+        top: 100px;
+        width: max-content;
+        height: 60px;
+        padding: 0 22px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fffdfa;
+        border: 2px solid #a8506a;
+        border-radius: 8px;
+        font-family: "Noto Sans JP", sans-serif;
+        font-weight: 700;
+        font-size: 28px;
+        line-height: 1;
+        color: #8a3d56;
+        white-space: nowrap;
+        transform-origin: 50% 50%;
+      }
+      #root [class~="05-reserve-chip-tag"] {
+        font-family: "Noto Sans JP", sans-serif;
+        font-weight: 500;
+        color: #fffdfa;
+        background: #a8506a;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 24px;
+      }
+      #root [class~="05-reserve-chip-num"] {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-weight: 600;
+        font-size: 30px;
+        letter-spacing: 0.04em;
+        color: #8a3d56;
+      }
+      #root [class~="05-reserve-chip"] svg {
+        display: block;
+        width: 28px;
+        height: 28px;
+      }
+    </style>
+
+    <!-- full-bleed ground -->
+    <div id="05-reserve-bg" class="clip" data-start="0" data-duration="5.5" data-track-index="0"></div>
+
+    <!-- blob behind the phone -->
+    <div id="05-reserve-blob" class="clip" data-start="0" data-duration="5.5" data-track-index="1"></div>
+
+    <!-- phone -->
+    <div id="05-reserve-phone" class="clip" data-start="0" data-duration="5.5" data-track-index="2">
+      <div id="05-reserve-screen">
+        <div id="05-reserve-plate" data-layout-allow-overflow>
+          <img src="assets/mobile-full-1080.png" alt="" />
+        </div>
+      </div>
+    </div>
+
+    <!-- headline states -->
+    <div id="05-reserve-heads" class="clip" data-start="0" data-duration="5.5" data-track-index="3" data-layout-allow-overlap>
+      <div id="05-reserve-rule"></div>
+      <div id="05-reserve-head-price" class="05-reserve-head">
+        <div class="05-reserve-eyebrow">PRICE</div>
+        <div class="05-reserve-title">犬種別の料金表つき</div>
+      </div>
+      <div id="05-reserve-head-resv" class="05-reserve-head">
+        <div class="05-reserve-eyebrow">RESERVATION</div>
+        <div class="05-reserve-title">完全予約制です</div>
+      </div>
+      <div id="05-reserve-head-online" class="05-reserve-head">
+        <div class="05-reserve-eyebrow">ONLINE</div>
+        <div class="05-reserve-title">LINE・Instagramからも</div>
+      </div>
+    </div>
+
+    <!-- chips -->
+    <div id="05-reserve-chip-hours" class="05-reserve-chip clip" data-start="0" data-duration="5.5" data-track-index="4">
+      <span class="05-reserve-chip-tag">営業</span>
+      <span>月・火・金・土 9:00–19:00</span>
+    </div>
+    <div id="05-reserve-chip-tel" class="05-reserve-chip clip" data-start="0" data-duration="5.5" data-track-index="5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#A8506A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+      <span class="05-reserve-chip-num">070-1678-1525</span>
+    </div>
+
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script>
+      (function () {
+        var scope =
+          document.querySelector('[data-composition-id="05-reserve"]') || document;
+        function $(id) {
+          return scope.querySelector('[id="' + id + '"]');
+        }
+
+        var plate = $("05-reserve-plate");
+        var phone = $("05-reserve-phone");
+        var blob = $("05-reserve-blob");
+        var headPrice = $("05-reserve-head-price");
+        var headResv = $("05-reserve-head-resv");
+        var headOnline = $("05-reserve-head-online");
+        var chipHours = $("05-reserve-chip-hours");
+        var chipTel = $("05-reserve-chip-tel");
+
+        // plate px -> screen px (x 2/3)
+        var S = 2 / 3;
+        var Y0 = -13200 * S; // -8800   (handoff_in)
+        var Y1 = -17244 * S; // -11496  (reservation card + 営業日)
+        var Y2 = -20758 * S; // -13838.67 (LINE / Instagram QR cards)
+
+        var tl = gsap.timeline({ paused: true });
+
+        // ---- Scene 1 (0.0–1.4s): glide to RESERVATION; headline swap ----
+        tl.fromTo(plate, { y: Y0 }, { y: Y1, duration: 1.35, ease: "power2.inOut" }, 0);
+
+        tl.fromTo(headPrice, { y: 0, opacity: 1 }, { y: -26, opacity: 0, duration: 0.35, ease: "power2.in" }, 0.3);
+        tl.fromTo(
+          headResv,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" },
+          0.55
+        );
+
+        // ---- Scene 2 (1.4–2.6s): hold; hours chip pops (low overshoot) ----
+        tl.fromTo(
+          chipHours,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.3)" },
+          1.5
+        );
+
+        // ---- Scene 3 (2.6–4.0s): glide to QR section; headline + chip swap ----
+        tl.to(plate, { y: Y2, duration: 1.3, ease: "power2.inOut" }, 2.6);
+
+        tl.to(headResv, { y: -26, opacity: 0, duration: 0.35, ease: "power2.in" }, 2.75);
+        tl.fromTo(
+          headOnline,
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" },
+          3.0
+        );
+
+        tl.to(chipHours, { scale: 0.85, opacity: 0, duration: 0.25, ease: "power2.in" }, 3.0);
+        tl.fromTo(
+          chipTel,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.3)" },
+          3.2
+        );
+
+        // ---- Scene 4 (4.0–5.0s): phone slides down and fades (sanctioned exit) ----
+        tl.fromTo(
+          phone,
+          { y: 0, opacity: 1 },
+          { y: 280, opacity: 0, duration: 0.8, ease: "power2.in" },
+          4.05
+        );
+        tl.fromTo(
+          blob,
+          { scale: 1, opacity: 0.12 },
+          { scale: 0.9, opacity: 0, duration: 0.8, ease: "power2.in" },
+          4.05
+        );
+
+        // pad to full duration
+        tl.set({}, {}, 5);
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["05-reserve"] = tl;
+      })();
+    </script>
+  </div>
+</template>

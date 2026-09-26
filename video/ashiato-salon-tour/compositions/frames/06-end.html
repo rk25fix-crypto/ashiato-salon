@@ -1,0 +1,226 @@
+<template>
+  <script src="assets/vendor/gsap.min.js"></script>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      container-type: size;
+      color: #4A3A3F;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+    [id="06-end-bg"] {
+      position: absolute;
+      inset: 0;
+      background: #FBF1F0;
+    }
+    /* topbar — mono chrome spine */
+    [id="06-end-topbar"] {
+      position: absolute;
+      left: 72px;
+      right: 72px;
+      top: 96px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #A8506A;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 26px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #A8506A;
+    }
+    /* logo lockup */
+    [id="06-end-logo"] {
+      position: absolute;
+      left: 420px;
+      top: 400px;
+      width: 240px;
+      height: 240px;
+      border-radius: 8px;
+      display: block;
+      object-fit: cover;
+    }
+    [id="06-end-name"] {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 690px;
+      text-align: center;
+      font-family: "Noto Serif JP", "Noto Sans JP", serif;
+      font-weight: 600;
+      font-size: 96px;
+      line-height: 0.96;
+      letter-spacing: -0.02em;
+      color: #4A3A3F;
+    }
+    /* instagram card */
+    [id="06-end-card"] {
+      position: absolute;
+      left: 130px;
+      top: 880px;
+      width: 820px;
+      height: 300px;
+      border-radius: 8px;
+      background: #A8506A;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px 0 52px;
+      box-sizing: border-box;
+    }
+    [id="06-end-card-text"] {
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    [id="06-end-label"] {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 600;
+      font-size: 26px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #F3D9DF;
+      padding-bottom: 18px;
+      border-bottom: 2px solid #F3D9DF;
+      align-self: flex-start;
+    }
+    [id="06-end-handle"] {
+      font-family: "Noto Serif JP", "Noto Sans JP", serif;
+      font-weight: 600;
+      font-size: 54px;
+      line-height: 1.02;
+      letter-spacing: -0.01em;
+      color: #FFFDFA;
+      white-space: nowrap;
+    }
+    [id="06-end-qr"] {
+      width: 220px;
+      height: 220px;
+      border-radius: 6px;
+      background: #FFFDFA;
+      padding: 16px;
+      box-sizing: border-box;
+      flex: none;
+    }
+    [id="06-end-qr"] img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+    /* reservation line + pill */
+    [id="06-end-body"] {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1250px;
+      text-align: center;
+      font-family: "Noto Sans JP", sans-serif;
+      font-weight: 400;
+      font-size: 36px;
+      line-height: 1.38;
+      color: #4A3A3F;
+    }
+    [id="06-end-pill-wrap"] {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 1345px;
+      display: flex;
+      justify-content: center;
+    }
+    [id="06-end-pill"] {
+      border: 2px solid #A8506A;
+      border-radius: 999px;
+      padding: 18px 56px 20px;
+      font-family: "Noto Serif JP", "Noto Sans JP", serif;
+      font-weight: 600;
+      font-size: 46px;
+      line-height: 1;
+      letter-spacing: 0.08em;
+      color: #A8506A;
+    }
+  </style>
+
+  <div id="root" data-composition-id="06-end" data-width="1080" data-height="1920" data-duration="4.5">
+    <style data-fonts="shared">
+      @font-face { font-family: "Noto Serif JP"; src: url("assets/fonts/NotoSerifJP-600.woff2") format("woff2"); font-weight: 400 900; font-style: normal; }
+      @font-face { font-family: "Noto Sans JP"; src: url("assets/fonts/NotoSansJP-400.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+    </style>
+    <div id="06-end-bg" class="clip" data-start="0" data-duration="4.5" data-track-index="0"></div>
+
+    <div id="06-end-topbar">
+      <span>Ashiato Salon</span>
+      <span>06 / 06</span>
+    </div>
+
+    <img id="06-end-logo" src="assets/logo.jpg" alt="" />
+    <div id="06-end-name">あしあとさろん</div>
+
+    <div id="06-end-card">
+      <div id="06-end-card-text">
+        <div id="06-end-label">Instagram</div>
+        <div id="06-end-handle">@ashiato.salon</div>
+      </div>
+      <div id="06-end-qr"><img src="assets/instagram-qr.png" alt="" /></div>
+    </div>
+
+    <div id="06-end-body">LINE・お電話でもご予約いただけます</div>
+    <div id="06-end-pill-wrap"><div id="06-end-pill">完全予約制</div></div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.querySelector('[data-composition-id="06-end"]');
+      const q = (id) => root.querySelector('[id="06-end-' + id + '"]');
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 1 (0.0–1.0s): topbar + logo settle, name slides up beneath
+      tl.fromTo(q("topbar"), { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 0);
+      tl.fromTo(
+        q("logo"),
+        { opacity: 0, scale: 0.94, y: 24 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.75, ease: "power3.out" },
+        0.05
+      );
+      tl.fromTo(
+        q("name"),
+        { opacity: 0, y: 48 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+        0.4
+      );
+
+      // Scene 2 (1.0–2.2s): deep-rose Instagram card rises in; contents land in sequence
+      tl.fromTo(
+        q("card"),
+        { opacity: 0, y: 80 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        1.0
+      );
+      tl.fromTo(q("label"), { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 1.35);
+      tl.fromTo(q("handle"), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 1.5);
+      tl.fromTo(
+        q("qr"),
+        { opacity: 0, scale: 0.92 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" },
+        1.65
+      );
+
+      // Scene 3 (2.2–3.0s): reservation line + 完全予約制 pill fade up
+      tl.fromTo(q("body"), { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 2.2);
+      tl.fromTo(q("pill"), { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 2.45);
+
+      // Scene 4 (3.0–4.5s): held still to the last frame
+      tl.set({}, {}, 4.5);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["06-end"] = tl;
+    })();
+  </script>
+</template>
