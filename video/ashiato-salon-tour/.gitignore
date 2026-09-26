@@ -1,0 +1,7 @@
+renders/
+snapshots*/
+capture/
+.media/
+.hyperframes/
+*.log
+node_modules/

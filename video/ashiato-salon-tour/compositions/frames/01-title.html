@@ -1,0 +1,376 @@
+<template id="01-title-template">
+  <div
+    id="root"
+    data-composition-id="01-title"
+    data-width="1080"
+    data-height="1920"
+    data-duration="4"
+  >
+    <style data-fonts="shared">
+      @font-face { font-family: "Noto Serif JP"; src: url("assets/fonts/NotoSerifJP-600.woff2") format("woff2"); font-weight: 400 900; font-style: normal; }
+      @font-face { font-family: "Noto Sans JP"; src: url("assets/fonts/NotoSansJP-400.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+    </style>
+
+    <style>
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+      #root [id="01-title-bg"] {
+        position: absolute;
+        inset: 0;
+        background: #fbf1f0;
+      }
+      #root [id="01-title-stage"] {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* topbar — the system spine */
+      #root [id="01-title-topbar"] {
+        position: absolute;
+        top: 88px;
+        left: 54px;
+        right: 54px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        font-size: 26px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #a8506a;
+      }
+
+      /* hero logo tile */
+      #root [id="01-title-tile"] {
+        position: absolute;
+        left: 380px;
+        top: 540px;
+        width: 320px;
+        height: 320px;
+        padding: 10px;
+        border: 1px solid #eddade;
+        border-radius: 32px;
+        background: #fffdfa;
+        transform-origin: 50% 50%;
+      }
+      #root [id="01-title-logo"] {
+        display: block;
+        width: 298px;
+        height: 298px;
+        border-radius: 24px;
+        object-fit: cover;
+      }
+
+      /* eyebrow — discrete type-on, mono */
+      #root [id="01-title-eyebrow-row"] {
+        position: absolute;
+        top: 890px;
+        left: 0;
+        right: 0;
+        text-align: center;
+      }
+      #root [id="01-title-eyebrow"] {
+        position: relative;
+        display: inline-block;
+        padding-left: 0.18em;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        font-size: 26px;
+        line-height: 1.2;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+      #root [id="01-title-eyebrow-ghost"] {
+        visibility: hidden;
+      }
+      #root [id="01-title-eyebrow-typed"] {
+        position: absolute;
+        left: 0.18em;
+        top: 0;
+        white-space: pre;
+      }
+
+      /* name — display-hero */
+      #root [id="01-title-name"] {
+        position: absolute;
+        top: 962px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-family: "Noto Serif JP", serif;
+        font-weight: 600;
+        font-size: 124px;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        color: #4a3a3f;
+        white-space: nowrap;
+      }
+
+      /* hairline rule under the name */
+      #root [id="01-title-rule"] {
+        position: absolute;
+        top: 1126px;
+        left: 220px;
+        width: 640px;
+        height: 4px;
+        display: block;
+        overflow: visible;
+      }
+
+      /* sub line — body */
+      #root [id="01-title-sub"] {
+        position: absolute;
+        top: 1166px;
+        left: 54px;
+        right: 54px;
+        text-align: center;
+        font-family: "Noto Sans JP", sans-serif;
+        font-weight: 400;
+        font-size: 42px;
+        line-height: 1.38;
+        color: #4a3a3f;
+      }
+      #root [id="01-title-sub"] span {
+        display: block;
+      }
+
+      /* CTA pill */
+      #root [id="01-title-pill-row"] {
+        position: absolute;
+        top: 1330px;
+        left: 0;
+        right: 0;
+        text-align: center;
+      }
+      #root [id="01-title-pill"] {
+        display: inline-flex;
+        align-items: center;
+        gap: 18px;
+        padding: 22px 46px;
+        border-radius: 999px;
+        background: #a8506a;
+        color: #f3d9df;
+        font-family: "Noto Sans JP", sans-serif;
+        font-weight: 700;
+        font-size: 34px;
+        line-height: 1.3;
+        white-space: nowrap;
+      }
+      #root [id="01-title-arrow"] {
+        display: block;
+        width: 26px;
+        height: 34px;
+      }
+    </style>
+
+    <!-- full-bleed cream ground -->
+    <div
+      id="01-title-bg"
+      class="clip"
+      data-start="0"
+      data-duration="4"
+      data-track-index="0"
+    ></div>
+
+    <div
+      id="01-title-stage"
+      class="clip"
+      data-start="0"
+      data-duration="4"
+      data-track-index="1"
+    >
+      <div id="01-title-topbar">
+        <span>ASHIATO SALON</span>
+        <span>SITE TOUR — 01</span>
+      </div>
+
+      <div id="01-title-tile">
+        <img id="01-title-logo" src="assets/logo.jpg" alt="あしあとさろん ロゴ" />
+      </div>
+
+      <div id="01-title-eyebrow-row">
+        <span id="01-title-eyebrow"
+          ><span id="01-title-eyebrow-ghost">TRIMMING SALON</span
+          ><span id="01-title-eyebrow-typed"></span
+        ></span>
+      </div>
+
+      <div id="01-title-name">あしあとさろん</div>
+
+      <svg
+        id="01-title-rule"
+        viewBox="0 0 640 4"
+        width="640"
+        height="4"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <line
+          id="01-title-rule-line"
+          x1="0"
+          y1="2"
+          x2="640"
+          y2="2"
+          fill="none"
+          stroke="#A8506A"
+          stroke-width="2"
+          stroke-linecap="butt"
+        />
+      </svg>
+
+      <div id="01-title-sub">
+        <span id="01-title-sub-1">愛知県豊川市御津町の</span>
+        <span id="01-title-sub-2">完全予約制トリミングサロン</span>
+      </div>
+
+      <div id="01-title-pill-row">
+        <span id="01-title-pill"
+          ><span>公式サイトをのぞいてみよう</span
+          ><svg
+            id="01-title-arrow"
+            viewBox="0 0 26 34"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M13 3 L13 29 M3 20 L13 30 L23 20"
+              fill="none"
+              stroke="#F3D9DF"
+              stroke-width="3.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            /></svg
+        ></span>
+      </div>
+    </div>
+
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script>
+      (function () {
+        var DURATION = 3.5;
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+
+        var topbar = $("01-title-topbar");
+        var tile = $("01-title-tile");
+        var typed = $("01-title-eyebrow-typed");
+        var name = $("01-title-name");
+        var ruleLine = $("01-title-rule-line");
+        var sub1 = $("01-title-sub-1");
+        var sub2 = $("01-title-sub-2");
+        var pill = $("01-title-pill");
+        var arrow = $("01-title-arrow");
+
+        var tl = gsap.timeline({ paused: true });
+
+        // Scene 1 (0.0–0.9s): logo tile fades in + settles 94% → 100%
+        tl.fromTo(
+          tile,
+          { opacity: 0, scale: 0.94 },
+          { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" },
+          0.05,
+        );
+        tl.fromTo(
+          topbar,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.5, ease: "power1.out" },
+          0.15,
+        );
+
+        // Scene 2 (0.9–1.8s): name slides up + fades in
+        tl.fromTo(
+          name,
+          { opacity: 0, y: 44 },
+          { opacity: 1, y: 0, duration: 0.65, ease: "power3.out" },
+          0.9,
+        );
+
+        // …then the eyebrow types on above it — discrete text states (instant jumps)
+        var SEQUENCE = [
+          { t: 0.0, text: "" },
+          { t: 1.24, text: "TRI" },
+          { t: 1.32, text: "TRIMMI" },
+          { t: 1.4, text: "TRIMMING" },
+          { t: 1.52, text: "TRIMMING SA" },
+          { t: 1.6, text: "TRIMMING SALON" },
+        ];
+        function textAt(time) {
+          for (var i = SEQUENCE.length - 1; i >= 0; i--) {
+            if (time >= SEQUENCE[i].t) return SEQUENCE[i].text;
+          }
+          return "";
+        }
+        typed.textContent = "";
+        var driver = { t: 0 };
+        tl.to(
+          driver,
+          {
+            t: DURATION,
+            duration: DURATION,
+            ease: "none",
+            onUpdate: function () {
+              typed.textContent = textAt(driver.t);
+            },
+          },
+          0,
+        );
+
+        // Scene 3 (1.8–2.6s): 2px hairline draws left → right, sub line fades up
+        var len = 640;
+        try {
+          var measured = ruleLine.getTotalLength();
+          if (measured > 0) len = measured;
+        } catch (e) {}
+        ruleLine.style.strokeDasharray = String(len);
+        tl.fromTo(
+          ruleLine,
+          { strokeDashoffset: len },
+          { strokeDashoffset: 0, duration: 0.6, ease: "power2.out" },
+          1.8,
+        );
+        tl.fromTo(
+          sub1,
+          { opacity: 0, y: 22 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+          2.02,
+        );
+        tl.fromTo(
+          sub2,
+          { opacity: 0, y: 22 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+          2.12,
+        );
+
+        // Scene 4 (2.6–3.5s): pill fades in, arrow nudges down once; all else holds
+        tl.fromTo(
+          pill,
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+          2.6,
+        );
+        tl.fromTo(
+          arrow,
+          { y: 0 },
+          { y: 9, duration: 0.22, ease: "power1.out" },
+          3.02,
+        );
+        tl.fromTo(
+          arrow,
+          { y: 9 },
+          { y: 0, duration: 0.3, ease: "power1.inOut", immediateRender: false },
+          3.24,
+        );
+
+        window.__timelines = window.__timelines || {};
+        window.__timelines["01-title"] = tl;
+      })();
+    </script>
+  </div>
+</template>

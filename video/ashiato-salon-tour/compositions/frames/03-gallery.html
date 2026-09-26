@@ -1,0 +1,342 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="03-gallery"
+    data-start="0"
+    data-duration="5.5"
+    data-width="1080"
+    data-height="1920"
+  >
+    <style data-fonts="shared">
+      @font-face { font-family: "Noto Serif JP"; src: url("assets/fonts/NotoSerifJP-600.woff2") format("woff2"); font-weight: 400 900; font-style: normal; }
+      @font-face { font-family: "Noto Sans JP"; src: url("assets/fonts/NotoSansJP-400.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+      @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/JetBrainsMono-600.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+    </style>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        container-type: size;
+      }
+
+      /* full-bleed ground (clip layer, not the root) */
+      [id="03-gallery-bg"] {
+        position: absolute;
+        inset: 0;
+        background: #fbf1f0;
+      }
+
+      [id="03-gallery-stage"] {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* soft deep-rose blob behind the phone, centered at (540, 940) */
+      [id="03-gallery-blob"] {
+        position: absolute;
+        left: 130px;
+        top: 530px;
+        width: 820px;
+        height: 820px;
+        border-radius: 50%;
+        background: #a8506a;
+        opacity: 0.12;
+      }
+
+      /* ---------- headline zone (above the phone) — matches frames 02/04/05 ---------- */
+      [id="03-gallery-rule"] {
+        position: absolute;
+        left: 248px;
+        right: 72px;
+        top: 131px;
+        height: 2px;
+        background: #a8506a;
+      }
+      [class~="03-gallery-head"] {
+        position: absolute;
+        left: 72px;
+        top: 104px;
+        width: 936px;
+        height: 156px;
+      }
+      [class~="03-gallery-eyebrow"] {
+        position: absolute;
+        left: 0;
+        top: 12px;
+        padding-right: 20px;
+        background: #fbf1f0;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 600;
+        font-size: 26px;
+        line-height: 32px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+      [class~="03-gallery-title"] {
+        position: absolute;
+        left: 0;
+        top: 64px;
+        font-family: "Noto Serif JP", serif;
+        font-weight: 600;
+        font-size: 64px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: #a8506a;
+        white-space: nowrap;
+      }
+
+      /* ---------- phone ---------- */
+      [id="03-gallery-bezel"] {
+        position: absolute;
+        left: 164px;
+        top: 284px;
+        width: 752px;
+        height: 1312px;
+        border-radius: 52px;
+        background: #4a3a3f;
+      }
+      [id="03-gallery-screen"] {
+        position: absolute;
+        left: 180px;
+        top: 300px;
+        width: 720px;
+        height: 1280px;
+        border-radius: 36px;
+        overflow: hidden;
+        background: #fbf1f0;
+      }
+      [id="03-gallery-plate"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 720px;
+      }
+      [id="03-gallery-plate"] img {
+        display: block;
+        width: 720px;
+        height: auto;
+      }
+      [id="03-gallery-dim"] {
+        position: absolute;
+        inset: 0;
+        background: #4a3a3f;
+        opacity: 0;
+      }
+
+      /* ---------- photo cards ---------- */
+      [class~="03-gallery-card"] {
+        position: absolute;
+        padding: 12px;
+        border-radius: 10px;
+        background: #fffdfa;
+        box-shadow: 0 22px 48px rgba(74, 58, 63, 0.24), 0 4px 12px rgba(74, 58, 63, 0.12);
+        transform-origin: 50% 50%;
+        will-change: transform, opacity;
+      }
+      [class~="03-gallery-card"] img {
+        display: block;
+        object-fit: cover;
+        border-radius: 3px;
+      }
+      [id="03-gallery-card-2"] {
+        left: 70px;
+        top: 996px;
+        z-index: 1;
+      }
+      [id="03-gallery-card-2"] img,
+      [id="03-gallery-card-3"] img {
+        width: 276px;
+        height: 345px;
+      }
+      [id="03-gallery-card-3"] {
+        left: 710px;
+        top: 996px;
+        z-index: 2;
+      }
+      [id="03-gallery-card-1"] {
+        left: 320px;
+        top: 818px;
+        z-index: 3;
+      }
+      [id="03-gallery-card-1"] img {
+        width: 416px;
+        height: 520px;
+      }
+
+      [class~="03-gallery-chiprow"] {
+        position: absolute;
+        left: -40px;
+        right: -40px;
+        top: calc(100% + 16px);
+        text-align: center;
+      }
+      [class~="03-gallery-chip"] {
+        display: inline-block;
+        padding: 10px 20px 11px;
+        border-radius: 6px;
+        background: #a8506a;
+        color: #fbf1f0;
+        font-family: "Noto Sans JP", sans-serif;
+        font-weight: 400;
+        font-size: 26px;
+        line-height: 1.2;
+        white-space: nowrap;
+        transform-origin: 50% 0%;
+      }
+    </style>
+
+    <div id="03-gallery-bg" class="clip" data-start="0" data-duration="5.5" data-track-index="0"></div>
+
+    <div id="03-gallery-stage" class="clip" data-start="0" data-duration="5.5" data-track-index="1">
+      <div id="03-gallery-blob"></div>
+
+      <!-- headline zone: A = handoff_in state, B = this frame's headline -->
+      <div id="03-gallery-rule"></div>
+      <div id="03-gallery-head-a" class="03-gallery-head">
+        <div id="03-gallery-eyebrow-a" class="03-gallery-eyebrow">ABOUT</div>
+        <div id="03-gallery-title-a" class="03-gallery-title">トリマー歴20年の安心</div>
+      </div>
+      <div id="03-gallery-head-b" class="03-gallery-head">
+        <div id="03-gallery-eyebrow-b" class="03-gallery-eyebrow">GALLERY</div>
+        <div id="03-gallery-title-b" class="03-gallery-title">サロンのようす</div>
+      </div>
+
+      <!-- phone -->
+      <div id="03-gallery-bezel"></div>
+      <div id="03-gallery-screen">
+        <div id="03-gallery-plate" data-layout-allow-overflow>
+          <img src="assets/mobile-full-1080.png" alt="" />
+        </div>
+        <div id="03-gallery-dim"></div>
+      </div>
+
+      <!-- lifted photo fan -->
+      <div id="03-gallery-card-2" class="03-gallery-card">
+        <img src="assets/gallery-2.jpg" alt="" />
+        <div class="03-gallery-chiprow"><span id="03-gallery-chip-2" class="03-gallery-chip">お迎えする入口</span></div>
+      </div>
+      <div id="03-gallery-card-3" class="03-gallery-card">
+        <img src="assets/gallery-3.jpg" alt="" />
+        <div class="03-gallery-chiprow"><span id="03-gallery-chip-3" class="03-gallery-chip">丁寧な施術のために</span></div>
+      </div>
+      <div id="03-gallery-card-1" class="03-gallery-card">
+        <img src="assets/gallery-1.jpg" alt="" />
+        <div class="03-gallery-chiprow"><span id="03-gallery-chip-1" class="03-gallery-chip">その子らしい表情に</span></div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const $ = (id) => '[id="03-gallery-' + id + '"]';
+        const SCALE = 2 / 3; // plate px -> screen px
+        const PLATE_IN = -2971 * SCALE; // handoff_in
+        const PLATE_OUT = -5588 * SCALE; // handoff_out
+
+        const tl = gsap.timeline({ paused: true });
+
+        // ---- Scene 1 (0.0–1.2s): page scroll to the gallery + headline swap ----
+        tl.fromTo(
+          $("plate"),
+          { y: PLATE_IN },
+          { y: PLATE_OUT, duration: 1.2, ease: "power2.inOut" },
+          0,
+        );
+
+        tl.fromTo(
+          [$("eyebrow-a"), $("title-a")],
+          { y: 0, opacity: 1 },
+          { y: -28, opacity: 0, duration: 0.4, ease: "power2.in", stagger: 0.06 },
+          0.25,
+        );
+        tl.fromTo(
+          $("eyebrow-b"),
+          { y: 28, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" },
+          0.62,
+        );
+        tl.fromTo(
+          $("title-b"),
+          { y: 36, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+          0.72,
+        );
+
+        // ---- Scene 2 (1.2–3.0s): dim the screen, photos lift out and fan ----
+        tl.fromTo($("dim"), { opacity: 0 }, { opacity: 0.25, duration: 0.5, ease: "power2.out" }, 1.2);
+
+        // left -> right: gallery-2, gallery-1 (hero, front), gallery-3
+        const cards = [
+          { id: "card-2", chip: "chip-2", fromX: 190, fromY: 150, tilt: -6, at: 1.3 },
+          { id: "card-1", chip: "chip-1", fromX: 0, fromY: 200, tilt: 0, at: 1.45 },
+          { id: "card-3", chip: "chip-3", fromX: -190, fromY: 150, tilt: 6, at: 1.6 },
+        ];
+
+        cards.forEach((c) => {
+          tl.fromTo(
+            $(c.id),
+            {
+              x: c.fromX,
+              y: c.fromY,
+              scale: 0.5,
+              rotation: 0,
+              rotationX: 38,
+              z: -120,
+              transformPerspective: 1400,
+              opacity: 0,
+            },
+            {
+              x: 0,
+              y: 0,
+              scale: 1,
+              rotation: c.tilt,
+              rotationX: 0,
+              z: 0,
+              transformPerspective: 1400,
+              opacity: 1,
+              duration: 0.8,
+              ease: "back.out(1.15)",
+            },
+            c.at,
+          );
+          tl.fromTo(
+            $(c.chip),
+            { scale: 0.6, y: -8, opacity: 0 },
+            { scale: 1, y: 0, opacity: 1, duration: 0.45, ease: "back.out(1.4)" },
+            c.at + 0.55,
+          );
+        });
+
+        // ---- Scene 3 (3.0–4.2s): hold the fan still ----
+
+        // ---- Scene 4 (4.2–5.0s): cards sink back into the screen, dim lifts ----
+        cards.forEach((c, i) => {
+          tl.to(
+            $(c.id),
+            {
+              y: 130,
+              scale: 0.6,
+              rotationX: 24,
+              z: -120,
+              opacity: 0,
+              duration: 0.5,
+              ease: "power2.in",
+            },
+            4.2 + i * 0.08,
+          );
+        });
+        tl.to($("dim"), { opacity: 0, duration: 0.55, ease: "power2.inOut" }, 4.3);
+
+        // pin the timeline length to the frame duration
+        tl.set({}, {}, 5);
+
+        window.__timelines["03-gallery"] = tl;
+      })();
+    </script>
+  </div>
+</template>
