@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dev-kit-session-start.sh",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "ask": [
+      "Bash(wrangler deploy*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(wrangler versions deploy*)",
+      "Bash(npx wrangler versions deploy*)",
+      "Bash(wrangler delete*)",
+      "Bash(npx wrangler delete*)",
+      "Bash(wrangler secret *)",
+      "Bash(npx wrangler secret *)",
+      "Bash(wrangler d1 * --remote*)",
+      "Bash(npx wrangler d1 * --remote*)",
+      "Bash(npm run deploy*)",
+      "Bash(git push * main*)",
+      "Bash(git push * master*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)"
+    ]
+  }
+}

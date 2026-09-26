@@ -1,0 +1,2 @@
+cdn.playwright.dev
+playwright.download.prss.microsoft.com
