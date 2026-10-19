@@ -111,3 +111,44 @@ Request `{ "password": string }`
 - 保存中はボタンを無効化(二重送信防止)。
 - 画像は送信前に Canvas で縮小(hero 長辺1600px、それ以外1000px、JPEG品質0.82、`createImageBitmap(file, {imageOrientation:'from-image'})`)。縮小後に1MB(1024×1024バイト)を超えたら品質を0.7→0.6→0.5→0.4と下げて作り直す。読めない形式は「この写真は使えません。別の写真を選んでください」。
 - エラー文言は Worker が返す `error` をそのまま表示する。
+
+### POST /caption
+
+SNS投稿の文章を1件作る(`sns/index.html` が使う)。Claude API(`https://api.anthropic.com/v1/messages`)を Worker から呼ぶ。API キーは wrangler secret `ANTHROPIC_API_KEY` にだけ置き、画面側には渡さない。
+
+Request:
+
+```
+{
+  "memo": "トイプードルのモカちゃん、テディベアカット",   // 任意。300文字まで
+  "kind": 0,                                               // 投稿の型 0=今日の子 1=ビフォーアフター 2=お手入れのコツ 3=お知らせ
+  "dataUrl": "data:image/jpeg;base64,...",                 // 任意。POST /save の image と同じ条件(JPEG、1MB以下)
+  "salon": { "name": "あしあとさろん", "area": "愛知県豊川市御津町", "tone": "やさしく…", "tags": "#あしあとさろん …" }, // 任意。各200文字まで
+  "variant": 0                                             // 「もう1回つくる」の回数(1以上で、前とは違う言い回しを頼む)
+}
+```
+
+検証(違反は `400`):
+- `memo` と `dataUrl` の両方が空 → `{"error":"写真かひとことを入れてください"}`
+- `kind` が 0〜3 の整数でない、`dataUrl` が JPEG の dataURL でない → `{"error":"不正なリクエストです"}`
+- `memo` が300文字超、`salon` の各値が200文字超 → `{"error":"文字数が多すぎます"}`。`dataUrl` が1MB超 → `{"error":"写真のサイズが大きすぎます"}`
+
+処理:
+- 認証後、`ANTHROPIC_API_KEY` が未登録なら `502 {"error":"文章づくりの準備ができていません。管理者に連絡してください"}`(Claude API は呼ばない)
+- 1日の生成回数が `CAPTION_DAILY_MAX`(80回、Worker 全体)を超えたら `429 {"error":"今日の上限に達しました。また明日お試しください"}`。数は isolate のメモリなので目安(厳密にするなら KV)
+- Claude API には `model: claude-sonnet-5-5`(短い投稿文なら Opus と差がなく、料金は半分。1回の生成で約2円)、`output_config.format`(JSON Schema で `{caption, hashtags}` に固定)、`fallbacks: "default"`(安全判定で断られた時に別モデルで作り直す。ヘッダ `anthropic-beta: server-side-fallback-2026-07-01`)で依頼する。写真があれば `image` ブロック(base64, image/jpeg)を先頭に付ける
+- 文章の決まり(指示文に含める): 120〜200字、お店の口調、飼い主さんの個人名を書かない、最後に来店・予約につながる一言、ハッシュタグは「いつも付けるもの」+ 内容に合うもの2〜4個
+
+応答:
+- 成功 `200 { "caption": "本文", "hashtags": "#… #…" }`
+- Claude API が 429/529 → `429 {"error":"混み合っています。少し待ってから、もう一度お試しください"}`
+- Claude API が 401/403(キーの失効など)→ `502 {"error":"文章づくりの準備ができていません。管理者に連絡してください"}`
+- それ以外の失敗・断られた(`stop_reason: "refusal"`)・返答が JSON でない → `500 {"error":"文章を作れませんでした。もう一度お試しください"}`
+
+## SNS投稿ページ(`sns/index.html`)の約束事
+
+- 合言葉・セッションは管理画面と共通(`localStorage` の `ashiatoAdminSession`)。片方で入れば両方使える。
+- 写真は送る前に長辺 1024px の JPEG に縮小する(文章づくりに使うだけなので小さくてよい)。
+- お店の設定(名前・地域・雰囲気・いつものハッシュタグ)は `localStorage` の `ashiatoSnsSettings`。未設定なら `data/content.json` の `access.name` と `hero.kicker` から名前と地域を拾う。
+- 「コピーして Instagram へ」は、文章をクリップボードにコピーし、写真を Web Share API(`navigator.share({files})`)で共有メニューに出す。非対応の端末では instagram.com を開く。LINE と X は文章入りの URL(`line.me/R/share?text=`、`x.com/intent/post?text=`)で開く。
+- 自動投稿・予約投稿はしない。

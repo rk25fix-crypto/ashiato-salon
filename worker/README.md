@@ -117,9 +117,31 @@ wrangler secret list
 
 `ADMIN_PASSWORD` `GITHUB_TOKEN` `SESSION_SECRET` の3つが出れば OK です。シークレットは登録した時点で反映され、再デプロイは不要です。
 
+### ANTHROPIC_API_KEY(SNS投稿ページ用。使う場合だけ)
+
+`sns/index.html`(SNS投稿をつくる)は、写真とひとことから投稿文を Claude に書いてもらいます。
+使うには Claude の API キーが必要です。登録しなくてもホームページの編集には影響しません
+(SNS投稿ページを開くと「文章づくりの準備ができていません。管理者に連絡してください」と出るだけ)。
+
+1. <https://platform.claude.com/> で Anthropic(Claude)のアカウントを作り、クレジットを入れる(前払い。目安: 1回の生成で数円)
+2. API Keys で新しいキーを作る(`sk-ant-` で始まる文字列。画面を閉じると二度と表示されないので、その場で次のコマンドに貼る)
+3. 登録する
+
+```powershell
+wrangler secret put ANTHROPIC_API_KEY
+```
+
+- キーは Worker の中でだけ使われ、ページの HTML や GitHub には入りません(`sns/index.html` を見ても書いてありません)。
+- 使いすぎ防止として、Worker 全体で **1日80回** まで(`CAPTION_DAILY_MAX`)。超えると「今日の上限に達しました」と出ます。
+- キーを止めたい時は、platform.claude.com でキーを削除し、`wrangler secret delete ANTHROPIC_API_KEY` を実行します。
+
 ## 6. Worker の URL を管理者(開発者)に伝える
 
-4 で表示された URL を開発者に伝えてください。開発者が `admin/index.html` の `WORKER_URL` にその URL を設定して公開します。
+4 で表示された URL を開発者に伝えてください。開発者が `admin/index.html` と `sns/index.html` の `WORKER_URL` にその URL を設定して公開します。
+
+オーナーさんに渡すリンク:
+- ホームページの編集: `https://ashiato-salon.pages.dev/admin/`
+- SNS投稿をつくる: `https://ashiato-salon.pages.dev/sns/`(合言葉は編集画面と同じ。片方で入れば両方使えます)
 
 動作確認(任意): 次のコマンドで `{"error":"もう一度ログインしてください"}` が返れば Worker は動いています。
 
@@ -197,7 +219,7 @@ wrangler deploy
 
 ## 開発者向けメモ
 
-- テスト: `node worker.test.mjs`(GitHub へは通信しません。fetch をモックしています)。`node render.test.js` は置換関数のテスト。`node verify-migration.js` はテンプレート・content.json・index.html の整合チェック。
+- テスト: `node worker.test.mjs`(GitHub・Claude API へは通信しません。fetch をモックしています)。`node render.test.js` は置換関数のテスト。`node verify-migration.js` はテンプレート・content.json・index.html の整合チェック。
 - 公開用 `index.html` のローカル生成: `node build-index.js`(Worker の生成と同じ出力。0 を参照)
 - 書き込みは GitHub の Git Data API(blob → tree → commit → ref 更新)で、1回の保存を1コミットにまとめています。途中で失敗しても main は動かない(中途半端な状態が公開されない)。別の保存と同時になった時は1回だけ自動でやり直します。
 - 写真は1枚1MBまで(管理画面は縮小してから送るので通常は数百KB)。Cloudflare 無料プランの CPU 時間(1リクエスト10ms)に収めるため、Worker は写真の base64 をデコードせずにそのまま GitHub に渡します(先頭の JPEG 判定とサイズ計算だけ行う)。
@@ -205,4 +227,5 @@ wrangler deploy
 - ビルド確認だけ: `wrangler deploy --dry-run --outdir <一時フォルダ>`
 - ローカル実行: `wrangler dev --var SESSION_SECRET:s --var ADMIN_PASSWORD:pw --var GITHUB_TOKEN:<テスト用PAT>`(CORS は `https://ashiato-salon.pages.dev` 固定なので、ブラウザから叩く場合は注意)
 - ログ確認: `wrangler tail`
+- SNS投稿ページの見た目確認: リポジトリ直下で `node scripts/sns-screenshots.mjs`(Playwright。Worker は呼ばずに応答を差し替えて、`docs/sns-screenshots/` に 375px 幅のスクショを出す。`--check` で自動チェックのみ)。採点の記録は `docs/caption-tool-loop-log.md`
 - 構成: `src/index.js`(ルーティング) / `src/lib.js`(処理本体) / `render.js`(テンプレート置換、Node と共用の CommonJS。`type: module` は付けないこと) / `build-index.js`(ローカル生成)
