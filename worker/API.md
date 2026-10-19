@@ -136,7 +136,7 @@ Request:
 処理:
 - 認証後、`ANTHROPIC_API_KEY` が未登録なら `502 {"error":"文章づくりの準備ができていません。管理者に連絡してください"}`(Claude API は呼ばない)
 - 1日の生成回数が `CAPTION_DAILY_MAX`(80回、Worker 全体)を超えたら `429 {"error":"今日の上限に達しました。また明日お試しください"}`。数は isolate のメモリなので目安(厳密にするなら KV)
-- Claude API には `model: claude-opus-5-5`、`output_config.format`(JSON Schema で `{caption, hashtags}` に固定)、`fallbacks: "default"`(安全判定で断られた時に別モデルで作り直す。ヘッダ `anthropic-beta: server-side-fallback-2026-07-01`)で依頼する。写真があれば `image` ブロック(base64, image/jpeg)を先頭に付ける
+- Claude API には `model: claude-sonnet-5-5`(短い投稿文なら Opus と差がなく、料金は半分。1回の生成で約2円)、`output_config.format`(JSON Schema で `{caption, hashtags}` に固定)、`fallbacks: "default"`(安全判定で断られた時に別モデルで作り直す。ヘッダ `anthropic-beta: server-side-fallback-2026-07-01`)で依頼する。写真があれば `image` ブロック(base64, image/jpeg)を先頭に付ける
 - 文章の決まり(指示文に含める): 120〜200字、お店の口調、飼い主さんの個人名を書かない、最後に来店・予約につながる一言、ハッシュタグは「いつも付けるもの」+ 内容に合うもの2〜4個
 
 応答:

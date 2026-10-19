@@ -46,7 +46,7 @@ const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 // 安全判定で断られた時に、別のモデルで作り直してもらう(server-side fallback)
 const ANTHROPIC_BETA = 'server-side-fallback-2026-07-01';
-export const CAPTION_MODEL = 'claude-opus-5-5';
+export const CAPTION_MODEL = 'claude-sonnet-5-5'; // 短い投稿文なら Opus と差がなく、料金は半分
 const CAPTION_MAX_TOKENS = 1024;
 // 使いすぎ防止。1日あたりの生成回数(Worker 全体で)。
 // ponytail: loginAttempts と同じく isolate のメモリなので「無いよりマシ」。厳密にするなら KV に載せ替える。
