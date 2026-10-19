@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<script>
+  // Cloudflare Worker の URL(末尾スラッシュなし)。admin/index.html と同じ値にする
+  const WORKER_URL = 'https://ashiato-salon-admin.sync-app-2026.workers.dev';
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf1f0">
+<title>SNS投稿をつくる｜あしあとさろん</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --deep:#a8506a;
+    --deep-2:#8a3d56;
+    --cream:#fbf1f0;
+    --paper:#fffdfa;
+    --ink:#4a3a3f;
+    --muted:#6d4b55;
+    --line:#eddade;
+    --soft:#f6e3e6;
+    --disabled:#d8c6ca;
+    --error:#a63b3b;
+    --error-bg:#f7e8e6;
+    --ok:#2f6b4a;
+    --ok-bg:#e6f2ea;
+    --line-green:#007a37;
+    --x-black:#1a1a1a;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+    font-size:16px;
+    line-height:1.7;
+    -webkit-text-size-adjust:100%;
+  }
+  h1,h2,h3{font-weight:700;margin:0;}
+  p{margin:0;}
+  button,textarea,input,select{font-family:inherit;font-size:1rem;}
+  [hidden]{display:none!important;}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+  .wrap{max-width:480px;margin:0 auto;padding:max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));}
+
+  /* ---- ログイン ---- */
+  #login .wrap{padding-top:40px;}
+  .login-title{font-size:1.4rem;text-align:center;}
+  .login-sub{font-size:.95rem;color:var(--muted);text-align:center;margin:8px 0 24px;}
+  .field-label{display:block;font-weight:700;margin-bottom:8px;}
+  .field input{
+    width:100%;padding:14px 16px;font-size:1.15rem;letter-spacing:.08em;
+    border:2px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);
+  }
+  .field input:focus{outline:3px solid var(--deep);outline-offset:2px;border-color:var(--deep);}
+  .msg-error{color:var(--error);background:var(--error-bg);border-radius:12px;padding:12px 14px;margin-top:12px;font-weight:700;}
+  .msg-error:empty{display:none;}
+
+  /* ---- ボタン ---- */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;min-height:56px;padding:12px 18px;border-radius:16px;border:2px solid transparent;
+    font-weight:700;font-size:1.1rem;cursor:pointer;text-decoration:none;line-height:1.3;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:focus-visible{outline:3px solid var(--deep);outline-offset:3px;}
+  .btn-primary{background:var(--deep);color:#fff;box-shadow:0 6px 16px rgba(168,80,106,.28);}
+  .btn-primary:active{background:var(--deep-2);}
+  .btn-primary:disabled{background:var(--disabled);box-shadow:none;cursor:default;color:#fff;}
+  .btn-outline{background:var(--paper);color:var(--deep-2);border-color:var(--deep);}
+  .btn-outline:active{background:var(--soft);}
+  .btn-line{background:var(--line-green);color:#fff;}   /* 白文字でも AA(4.5:1)を満たす濃さの緑 */
+  .btn-x{background:var(--x-black);color:#fff;}
+  .btn-sm{min-height:48px;font-size:1rem;border-radius:14px;}
+  .btn-text{background:none;border:none;color:var(--deep-2);text-decoration:underline;min-height:44px;padding:8px 12px;font-weight:700;font-size:1rem;cursor:pointer;}
+  .spinner{width:20px;height:20px;border-radius:50%;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---- 画面上部 ---- */
+  .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
+  .top h1{font-size:1.35rem;line-height:1.3;}
+  .top p{font-size:.9rem;color:var(--muted);margin-top:4px;}
+  .icon-btn{
+    flex:none;min-height:48px;padding:0 14px 0 10px;border-radius:14px;border:2px solid var(--line);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--deep-2);font-weight:700;font-size:.95rem;
+  }
+  .icon-btn:focus-visible{outline:3px solid var(--deep);outline-offset:2px;}
+
+  /* ---- カード ---- */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;}
+  .card h2{font-size:1.05rem;display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .step{flex:none;width:28px;height:28px;border-radius:50%;background:var(--deep);color:#fff;font-size:.95rem;display:flex;align-items:center;justify-content:center;}
+  .hint{font-size:.9rem;color:var(--muted);}
+
+  /* 写真 */
+  .pick{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    min-height:150px;border:2px dashed var(--deep);border-radius:16px;background:var(--soft);
+    color:var(--deep-2);cursor:pointer;text-align:center;padding:16px;
+  }
+  .pick:focus-within{outline:3px solid var(--deep);outline-offset:2px;}
+  .pick strong{font-size:1.15rem;}
+  .pick input{position:absolute;width:1px;height:1px;opacity:0;}
+  .preview{display:none;gap:12px;align-items:flex-start;}
+  .preview.show{display:flex;}
+  .preview img{width:128px;height:128px;object-fit:cover;border-radius:14px;border:1px solid var(--line);flex:none;}
+  .preview .side{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;}
+  .preview .side .ok{color:var(--ok);font-weight:700;}
+
+  /* ひとこと */
+  textarea{
+    width:100%;min-height:92px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;
+    background:var(--paper);color:var(--ink);resize:vertical;line-height:1.7;
+  }
+  textarea:focus{outline:3px solid var(--deep);outline-offset:2px;border-color:var(--deep);}
+  textarea::placeholder{color:#7d5f68;}
+  #result textarea{overflow:hidden;}   /* 中身に合わせて高さを変える(欄の中でスクロールさせない) */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .chip{position:relative;}
+  .chip input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
+  .chip span{
+    display:flex;align-items:center;min-height:44px;padding:8px 16px;border-radius:999px;
+    border:2px solid var(--line);background:var(--paper);color:var(--ink);font-weight:700;font-size:.95rem;
+  }
+  .chip input:checked + span{background:var(--deep);border-color:var(--deep);color:#fff;}
+  .chip input:focus-visible + span{outline:3px solid var(--deep);outline-offset:2px;}
+
+  /* 結果 */
+  #result textarea{min-height:180px;font-size:1.05rem;}
+  #result #tags{min-height:56px;color:var(--deep-2);}
+  #make-btn{margin-top:4px;}
+  #result{margin-top:14px;}
+  .label{display:block;font-weight:700;margin:12px 0 6px;}
+  .notice{background:var(--ok-bg);color:var(--ok);border-radius:14px;padding:12px 14px;font-weight:700;margin-top:12px;line-height:1.6;}
+  .notice:empty{display:none;}
+  .share{display:grid;gap:10px;margin-top:14px;}
+  .share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .howto{margin-top:14px;font-size:.9rem;color:var(--muted);}
+  .howto ol{margin:4px 0 0;padding-left:1.3em;}
+
+  /* 設定シート */
+  dialog{
+    border:none;border-radius:20px 20px 0 0;padding:0;width:100%;max-width:480px;
+    margin:auto auto 0;background:var(--paper);color:var(--ink);
+  }
+  dialog::backdrop{background:rgba(74,58,63,.45);}
+  dialog .inner{padding:20px 16px max(24px, env(safe-area-inset-bottom));}
+  dialog h2{font-size:1.15rem;margin-bottom:12px;}
+  .form-row{margin-bottom:12px;}
+  .form-row input,.form-row select{
+    width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);
+  }
+  .form-row input:focus,.form-row select:focus{outline:3px solid var(--deep);outline-offset:2px;border-color:var(--deep);}
+  .dialog-actions{display:grid;gap:10px;margin-top:16px;}
+
+  /* トースト */
+  #toast{
+    position:fixed;left:16px;right:16px;bottom:max(20px, env(safe-area-inset-bottom));z-index:50;
+    background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;font-weight:700;text-align:center;
+    opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;
+  }
+  #toast.show{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+
+<!-- ================= ログイン ================= -->
+<section id="login" hidden>
+  <div class="wrap">
+    <h1 class="login-title">SNS投稿をつくる</h1>
+    <p class="login-sub">ホームページの編集と同じ合言葉で入れます</p>
+    <form id="login-form" novalidate>
+      <div class="field">
+        <label class="field-label" for="pw">合言葉</label>
+        <input id="pw" type="password" autocomplete="current-password" inputmode="text" enterkeyhint="go">
+      </div>
+      <div class="msg-error" id="pw-error" role="alert"></div>
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary" id="login-btn"><span id="login-btn-label">入る</span></button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ================= 本体 ================= -->
+<main id="app" hidden>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>SNS投稿をつくる</h1>
+        <p>写真とひとことで、文章ができます</p>
+      </div>
+      <button type="button" class="icon-btn" id="settings-btn" aria-label="お店の設定">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定
+      </button>
+    </div>
+
+    <section class="card" aria-labelledby="h-photo">
+      <h2 id="h-photo"><span class="step" aria-hidden="true">1</span>写真を選ぶ</h2>
+      <label class="pick" id="pick" for="file">
+        <input type="file" id="file" accept="image/*">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <strong>写真を選ぶ</strong>
+        <span class="hint">仕上がりの写真を1枚。あとから撮ることもできます</span>
+      </label>
+      <div class="preview" id="preview">
+        <img id="preview-img" alt="選んだ写真">
+        <div class="side">
+          <p class="ok">この写真でつくります</p>
+          <button type="button" class="btn btn-outline btn-sm" id="change-photo">別の写真にする</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-memo">
+      <h2 id="h-memo"><span class="step" aria-hidden="true">2</span>ひとこと<span class="hint" style="font-weight:400">(なくてもOK)</span></h2>
+      <label for="memo" class="visually-hidden">ひとこと</label>
+      <textarea id="memo" placeholder="例: トイプードルのモカちゃん、テディベアカット。おりこうさんでした" maxlength="300" enterkeyhint="done"></textarea>
+      <p class="label" id="kind-label" style="margin-top:12px">投稿の種類<span class="hint" style="font-weight:400">(1つ選ぶ)</span></p>
+      <div class="chips" role="radiogroup" aria-labelledby="kind-label">
+        <label class="chip"><input type="radio" name="kind" value="0" checked><span>今日の子</span></label>
+        <label class="chip"><input type="radio" name="kind" value="1"><span>ビフォーアフター</span></label>
+        <label class="chip"><input type="radio" name="kind" value="2"><span>お手入れのコツ</span></label>
+        <label class="chip"><input type="radio" name="kind" value="3"><span>お知らせ</span></label>
+      </div>
+    </section>
+
+    <button type="button" class="btn btn-primary" id="make-btn">
+      <span id="make-spinner" class="spinner" hidden></span>
+      <span id="make-label">文章をつくる</span>
+    </button>
+    <div class="msg-error" id="make-error" role="alert"></div>
+
+    <section class="card" id="result" hidden aria-labelledby="h-result">
+      <h2 id="h-result"><span class="step" aria-hidden="true">3</span>できあがり<span class="hint" style="font-weight:400">(直してもOK)</span></h2>
+      <label for="caption" class="visually-hidden">投稿の文章</label>
+      <textarea id="caption"></textarea>
+      <label class="label" for="tags">ハッシュタグ</label>
+      <textarea id="tags"></textarea>
+
+      <div class="share">
+        <button type="button" class="btn btn-primary" id="ig-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+          コピーして Instagram へ
+        </button>
+        <div class="share-row">
+          <a class="btn btn-line btn-sm" id="line-btn" href="#" target="_blank" rel="noopener">LINE で送る</a>
+          <a class="btn btn-x btn-sm" id="x-btn" href="#" target="_blank" rel="noopener">X に投稿</a>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" id="retry-btn">もう1回つくる(別の言い方)</button>
+      </div>
+      <div class="notice" id="notice" role="status" aria-live="polite"></div>
+      <div class="howto">
+        <b>Instagram での貼り付け方</b>
+        <ol>
+          <li>Instagram で「＋」→ 投稿 → 写真を選ぶ</li>
+          <li>文章の欄を長押し → 「ペースト」</li>
+        </ol>
+      </div>
+    </section>
+
+    <p class="hint" style="text-align:center;margin-top:8px">自動では投稿しません。文章はこのページで作り、投稿はいつも通りアプリから行います。</p>
+  </div>
+</main>
+
+<!-- ================= 設定 ================= -->
+<dialog id="settings" aria-labelledby="h-settings">
+  <form method="dialog" class="inner" id="settings-form">
+    <h2 id="h-settings">お店の設定</h2>
+    <p class="hint" style="margin-bottom:12px">文章を作るときに使います。一度入れれば覚えています。</p>
+    <div class="form-row"><label class="field-label" for="s-name">お店の名前</label><input id="s-name" type="text" autocomplete="organization"></div>
+    <div class="form-row"><label class="field-label" for="s-area">地域</label><input id="s-area" type="text"></div>
+    <div class="form-row"><label class="field-label" for="s-tone">文章の雰囲気</label>
+      <select id="s-tone">
+        <option value="やさしく、親しみやすい。絵文字は少しだけ">やさしく親しみやすく(絵文字すこし)</option>
+        <option value="明るく元気。絵文字多め">明るく元気に(絵文字多め)</option>
+        <option value="落ち着いて丁寧。絵文字なし">落ち着いて丁寧に(絵文字なし)</option>
+      </select>
+    </div>
+    <div class="form-row"><label class="field-label" for="s-tags">いつも付けるハッシュタグ</label><input id="s-tags" type="text" placeholder="#あしあとさろん #トリミング"></div>
+    <div class="dialog-actions">
+      <button type="submit" class="btn btn-primary" value="save">この内容で覚える</button>
+      <button type="button" class="btn btn-outline btn-sm" id="settings-cancel">閉じる</button>
+      <button type="button" class="btn-text" id="logout-btn">この端末から出る(ログアウト)</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var $ = function(id){ return document.getElementById(id); };
+  var SESSION_KEY = 'ashiatoAdminSession';   // admin/index.html と共通(片方で入れば両方使える)
+  var SETTINGS_KEY = 'ashiatoSnsSettings';
+  var MSG_NETWORK = '通信できませんでした。電波の良いところでもう一度お試しください';
+  var MSG_FAILED = '文章を作れませんでした。もう一度お試しください';
+  var MSG_BAD_PHOTO = 'この写真は使えません。別の写真を選んでください';
+  var MAX_DIMENSION = 1024;                  // 文章づくりに使うだけなので小さくして送る(早い・安い)
+  var MAX_UPLOAD_BYTES = 1024 * 1024;        // Worker の写真の上限(デコード後)
+  var JPEG_QUALITIES = [0.82, 0.7, 0.6, 0.5, 0.4];
+
+  var token = null;
+  var photo = null;      // { dataUrl, blob }
+  var making = false;
+  var variant = 0;       // 「もう1回つくる」の回数
+  var settings = {
+    name: 'あしあとさろん',
+    area: '愛知県豊川市御津町',
+    tone: 'やさしく、親しみやすい。絵文字は少しだけ',
+    tags: '#あしあとさろん #トリミング #トリミングサロン #豊川市'
+  };
+
+  /* ================= セッション(admin と同じ) ================= */
+  function loadSession(){
+    try{
+      var s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      if(s && s.token && s.expiresAt > Date.now()) return s.token;
+      localStorage.removeItem(SESSION_KEY);
+    }catch(e){}
+    return null;
+  }
+  function saveSession(t, expiresAt){
+    token = t;
+    try{ localStorage.setItem(SESSION_KEY, JSON.stringify({ token:t, expiresAt:expiresAt })); }catch(e){}
+  }
+  function clearSession(){
+    token = null;
+    try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  }
+
+  /* ================= 設定 ================= */
+  function loadSettings(){
+    try{
+      var s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+      if(s && typeof s === 'object'){
+        ['name','area','tone','tags'].forEach(function(k){ if(typeof s[k] === 'string') settings[k] = s[k]; });
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+  function saveSettings(){
+    try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }catch(e){}
+  }
+  // ホームページの文章(data/content.json)からお店の名前と地域を拾う(未設定の時だけ)
+  function fillFromSite(){
+    return fetch('../data/content.json', { cache:'no-cache' }).then(function(r){ return r.json(); }).then(function(c){
+      var t = (c && c.texts) || {};
+      if(t['access.name']) settings.name = t['access.name'];
+      if(t['hero.kicker']){
+        var m = t['hero.kicker'].match(/^(.+?)の/);   // 「愛知県豊川市御津町の完全予約制サロン」→「愛知県豊川市御津町」
+        if(m) settings.area = m[1];
+      }
+    }).catch(function(){});
+  }
+  function openSettings(){
+    $('s-name').value = settings.name;
+    $('s-area').value = settings.area;
+    $('s-tone').value = settings.tone;
+    $('s-tags').value = settings.tags;
+    if(typeof $('settings').showModal === 'function') $('settings').showModal();
+    else $('settings').setAttribute('open', '');
+  }
+  function closeSettings(){ $('settings').close ? $('settings').close() : $('settings').removeAttribute('open'); }
+  $('settings-btn').addEventListener('click', openSettings);
+  $('settings-cancel').addEventListener('click', closeSettings);
+  $('settings-form').addEventListener('submit', function(){
+    settings.name = $('s-name').value.trim();
+    settings.area = $('s-area').value.trim();
+    settings.tone = $('s-tone').value;
+    settings.tags = $('s-tags').value.trim();
+    saveSettings();
+    toast('覚えました');
+  });
+  $('logout-btn').addEventListener('click', function(){
+    closeSettings();
+    clearSession();
+    showLogin('');
+  });
+
+  /* ================= API ================= */
+  function api(path, body){
+    var headers = {};
+    if(token) headers['Authorization'] = 'Bearer ' + token;
+    if(body) headers['Content-Type'] = 'application/json';
+    return fetch(WORKER_URL + path, {
+      method: body ? 'POST' : 'GET',
+      headers: headers,
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(data){
+        return { ok:res.ok, status:res.status, data:data || {} };
+      });
+    }, function(){
+      return { ok:false, status:0, data:{ error:MSG_NETWORK } };
+    });
+  }
+
+  /* ================= 画面切り替え ================= */
+  function showLogin(message){
+    $('app').hidden = true;
+    $('login').hidden = false;
+    $('pw').value = '';
+    $('pw-error').textContent = message || '';
+  }
+  function showApp(){
+    $('login').hidden = true;
+    $('app').hidden = false;
+  }
+  function sessionExpired(res){
+    clearSession();
+    showLogin(res.data.error || 'もう一度入り直してください');
+  }
+
+  $('login-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var pw = $('pw').value;
+    if(!pw){ $('pw-error').textContent = '合言葉を入れてください'; return; }
+    $('pw-error').textContent = '';
+    $('login-btn').disabled = true;
+    $('login-btn-label').textContent = '確認中…';
+    api('/login', { password:pw }).then(function(res){
+      $('login-btn').disabled = false;
+      $('login-btn-label').textContent = '入る';
+      if(res.ok && res.data.token){
+        saveSession(res.data.token, res.data.expiresAt);
+        showApp();
+      } else {
+        $('pw-error').textContent = res.data.error || MSG_NETWORK;
+      }
+    });
+  });
+
+  /* ================= 写真 ================= */
+  $('file').addEventListener('change', function(e){
+    var f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if(!f) return;
+    $('make-error').textContent = '';
+    resizeImage(f, MAX_DIMENSION).then(function(dataUrl){
+      photo = { dataUrl:dataUrl, blob:dataUrlToBlob(dataUrl) };
+      $('preview-img').src = dataUrl;
+      $('preview').classList.add('show');
+      $('pick').hidden = true;
+      variant = 0;
+    }, function(){
+      $('make-error').textContent = MSG_BAD_PHOTO;
+    });
+  });
+  $('change-photo').addEventListener('click', function(){
+    photo = null;
+    $('preview').classList.remove('show');
+    $('preview-img').removeAttribute('src');
+    $('pick').hidden = false;
+    $('file').click();
+  });
+
+  // 長辺を maxDimension 以下に縮小し、1MB 以下の JPEG の dataURL にする(admin/index.html と同じ作り)
+  function resizeImage(file, maxDimension){
+    var url = URL.createObjectURL(file);
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      img.onload = function(){ resolve(img); };
+      img.onerror = reject;
+      img.src = url;
+    }).then(function(img){
+      var scale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
+      var w = Math.max(1, Math.round(img.naturalWidth * scale));
+      var h = Math.max(1, Math.round(img.naturalHeight * scale));
+      var source;
+      if(!window.createImageBitmap){
+        source = Promise.resolve(img);
+      } else {
+        source = createImageBitmap(file, { imageOrientation:'from-image', resizeWidth:w, resizeHeight:h, resizeQuality:'high' })
+          .then(function(b){
+            if(b.width !== w || b.height !== h){ if(b.close) b.close(); throw new Error('size'); }
+            return b;
+          })
+          .catch(function(){ return createImageBitmap(file, { imageOrientation:'from-image' }); })
+          .catch(function(){ return img; });
+      }
+      return source.then(function(src){
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(src, 0, 0, w, h);
+        if(src.close) src.close();
+        return encodeUnderLimit(canvas);
+      });
+    }).then(function(dataUrl){
+      URL.revokeObjectURL(url);
+      return dataUrl;
+    }, function(err){
+      URL.revokeObjectURL(url);
+      throw err;
+    });
+  }
+  function encodeUnderLimit(canvas){
+    var dataUrl;
+    for(var i = 0; i < JPEG_QUALITIES.length; i++){
+      dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITIES[i]);
+      if(dataUrl.indexOf('data:image/jpeg') !== 0) throw new Error('encode');
+      var b64 = dataUrl.length - dataUrl.indexOf(',') - 1;
+      if(Math.floor(b64 * 3 / 4) <= MAX_UPLOAD_BYTES) break;
+    }
+    return dataUrl;
+  }
+  function dataUrlToBlob(dataUrl){
+    var bin = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
+    var bytes = new Uint8Array(bin.length);
+    for(var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type:'image/jpeg' });
+  }
+
+  /* ================= 文章をつくる ================= */
+  function kind(){
+    var r = document.querySelector('input[name="kind"]:checked');
+    return r ? Number(r.value) : 0;
+  }
+  function setMaking(on){
+    making = on;
+    $('make-btn').disabled = on;
+    $('retry-btn').disabled = on;
+    $('make-spinner').hidden = !on;
+    $('make-label').textContent = on ? 'つくっています…(10秒ほど)' : '文章をつくる';
+  }
+  function make(){
+    if(making) return;
+    var memo = $('memo').value.trim();
+    if(!memo && !photo){
+      $('make-error').textContent = '写真を選ぶか、ひとことを入れてください';
+      return;
+    }
+    $('make-error').textContent = '';
+    $('notice').textContent = '';
+    setMaking(true);
+    api('/caption', {
+      memo: memo,
+      kind: kind(),
+      dataUrl: photo ? photo.dataUrl : null,
+      salon: settings,
+      variant: variant
+    }).then(function(res){
+      setMaking(false);
+      if(res.status === 401) return sessionExpired(res);
+      if(!res.ok || !res.data.caption){
+        $('make-error').textContent = res.data.error || MSG_FAILED;
+        return;
+      }
+      $('caption').value = res.data.caption;
+      $('tags').value = res.data.hashtags || '';
+      $('result').hidden = false;
+      autoGrow($('caption')); autoGrow($('tags'));
+      $('result').scrollIntoView({ behavior:'smooth', block:'start' });
+    });
+  }
+  $('make-btn').addEventListener('click', function(){ variant = 0; make(); });
+  $('retry-btn').addEventListener('click', function(){ variant += 1; make(); });
+
+  /* ================= コピーして SNS へ ================= */
+  function postText(){
+    var tags = $('tags').value.trim();
+    return $('caption').value.trim() + (tags ? '\n\n' + tags : '');
+  }
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+    // 古いブラウザ: 文章の欄を選択状態にしておく
+    $('caption').focus(); $('caption').select();
+    return Promise.reject(new Error('clipboard'));
+  }
+  $('ig-btn').addEventListener('click', function(){
+    var text = postText();
+    if(!text){ $('make-error').textContent = '文章がありません。先に「文章をつくる」を押してください'; return; }
+    // クリップボードと共有は、どちらもボタンを押した直後でないと動かないので、待たずに続けて呼ぶ
+    var copied = copyText(text);
+    var shared = false;
+    if(photo && navigator.canShare){
+      var file = new File([photo.blob], 'salon.jpg', { type:'image/jpeg' });
+      if(navigator.canShare({ files:[file] })){
+        shared = true;
+        navigator.share({ files:[file] }).catch(function(){});
+      }
+    }
+    if(!shared) window.open('https://www.instagram.com/', '_blank', 'noopener');
+    copied.then(function(){
+      $('notice').textContent = shared
+        ? '文章をコピーしました。開いたメニューで Instagram を選び、文章の欄を長押し →「ペースト」してください'
+        : '文章をコピーしました。Instagram で投稿を作り、文章の欄を長押し →「ペースト」してください';
+    }, function(){
+      $('notice').textContent = '文章を選択しました。長押しして「コピー」したあと、Instagram で貼り付けてください';
+    });
+  });
+  function updateShareLinks(){
+    var t = encodeURIComponent(postText());
+    $('line-btn').href = 'https://line.me/R/share?text=' + t;
+    $('x-btn').href = 'https://x.com/intent/post?text=' + t;
+  }
+  // 文章の欄は中身に合わせて高さを変える(欄の中でスクロールさせない)
+  function autoGrow(ta){ ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 4) + 'px'; }
+  ['caption','tags'].forEach(function(id){ $(id).addEventListener('input', function(){ autoGrow($(id)); updateShareLinks(); }); });
+  $('line-btn').addEventListener('click', function(){ updateShareLinks(); copyText(postText()).catch(function(){}); });
+  $('x-btn').addEventListener('click', function(){ updateShareLinks(); copyText(postText()).catch(function(){}); });
+  new MutationObserver(updateShareLinks).observe($('result'), { attributes:true, attributeFilter:['hidden'] });
+
+  /* ================= トースト ================= */
+  var toastTimer = null;
+  function toast(msg){
+    $('toast').textContent = msg;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ $('toast').classList.remove('show'); }, 2500);
+  }
+
+  /* ================= 起動 ================= */
+  var hasSaved = loadSettings();
+  if(!hasSaved) fillFromSite();
+  token = loadSession();
+  if(token) showApp(); else showLogin('');
+})();
+</script>
+</body>
+</html>

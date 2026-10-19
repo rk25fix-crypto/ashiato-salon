@@ -39,6 +39,28 @@ const ERR_GH_AUTH = '更新に失敗しました。管理者に連絡してく�
 const ERR_SAVE = '保存できませんでした。しばらくしてからもう一度お試しください';
 const ERR_SIZE = '写真のサイズが大きすぎます';
 
+// ---- /caption(SNS投稿文)----
+// 投稿文は Claude API(https://api.anthropic.com/v1/messages)で作る。API キーは wrangler secret の
+// ANTHROPIC_API_KEY にだけ置き、画面側には一切渡さない。
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_VERSION = '2023-06-01';
+// 安全判定で断られた時に、別のモデルで作り直してもらう(server-side fallback)
+const ANTHROPIC_BETA = 'server-side-fallback-2026-07-01';
+export const CAPTION_MODEL = 'claude-opus-5-5';
+const CAPTION_MAX_TOKENS = 1024;
+// 使いすぎ防止。1日あたりの生成回数(Worker 全体で)。
+// ponytail: loginAttempts と同じく isolate のメモリなので「無いよりマシ」。厳密にするなら KV に載せ替える。
+export const CAPTION_DAILY_MAX = 80;
+export const captionCounts = new Map(); // 'YYYY-MM-DD' → 回数
+const MAX_MEMO_LEN = 300;
+const MAX_SETTING_LEN = 200;
+// 投稿の型。画面側のチップと同じ順番(番号で受け取る)
+export const CAPTION_KINDS = ['今日の子', 'ビフォーアフター', 'お手入れのコツ', 'お知らせ'];
+const ERR_CAPTION_SETUP = '文章づくりの準備ができていません。管理者に連絡してください';
+const ERR_CAPTION_BUSY = '混み合っています。少し待ってから、もう一度お試しください';
+const ERR_CAPTION_LIMIT = '今日の上限に達しました。また明日お試しください';
+const ERR_CAPTION_FAILED = '文章を作れませんでした。もう一度お試しください';
+
 // ponytail: isolate は頻繁に作り直されるので「無いよりマシ」程度のレート制限。
 // 実質的な防御は 1秒wait + 長い合言葉。永続化が要るなら KV / Durable Object に載せ替える。
 export const loginAttempts = new Map();
@@ -269,23 +291,105 @@ export function validateSaveShape(body) {
   }
   if (body.type === 'image') {
     if (typeof body.key !== 'string' || typeof body.dataUrl !== 'string') return ERR_BAD;
-    const comma = body.dataUrl.indexOf(',');
-    if (!body.dataUrl.startsWith('data:') || comma < 0 || !body.dataUrl.slice(0, comma).endsWith(';base64')) return ERR_BAD;
-    // 全体はデコードしない(CPU 時間対策)。サイズは長さとパディングから計算する。
-    const b64 = body.dataUrl.slice(comma + 1);
-    if (b64.length > Math.ceil(MAX_IMAGE_BYTES / 3) * 4) return ERR_SIZE; // 正規表現を掛ける前に明らかな超過を弾く
-    // 改行・空白も不可。'=' は末尾の1〜2文字だけ。
-    // ^[...]*={0,2}$ の形の正規表現は初回実行が遅い(1MBで約10ms)ので、「範囲外の文字を探す」形で書く(約2ms)。
-    const eq = b64.indexOf('=');
-    const pad = eq < 0 ? '' : b64.slice(eq);
-    if (b64.length % 4 || (pad !== '' && pad !== '=' && pad !== '==') || /[^A-Za-z0-9+/=]/.test(b64)) return ERR_BAD;
-    if ((b64.length / 4) * 3 - pad.length > MAX_IMAGE_BYTES) return ERR_SIZE;
-    const head = atob(b64.slice(0, 4)); // 先頭3バイトだけデコードして JPEG(FF D8 FF)か確認
-    if (head.length < 3 || head.charCodeAt(0) !== 0xff || head.charCodeAt(1) !== 0xd8 || head.charCodeAt(2) !== 0xff) return ERR_BAD;
-    body.base64 = b64;
+    const r = validateJpegDataUrl(body.dataUrl);
+    if (r.error) return r.error;
+    body.base64 = r.base64;
     return null;
   }
   return ERR_BAD;
+}
+
+// JPEG の dataURL(1MB 以下)か確認し、base64 部分を返す。/save と /caption で共用。
+// 戻り値 { base64 } または { error }
+export function validateJpegDataUrl(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  if (!dataUrl.startsWith('data:') || comma < 0 || !dataUrl.slice(0, comma).endsWith(';base64')) return { error: ERR_BAD };
+  // 全体はデコードしない(CPU 時間対策)。サイズは長さとパディングから計算する。
+  const b64 = dataUrl.slice(comma + 1);
+  if (b64.length > Math.ceil(MAX_IMAGE_BYTES / 3) * 4) return { error: ERR_SIZE }; // 正規表現を掛ける前に明らかな超過を弾く
+  // 改行・空白も不可。'=' は末尾の1〜2文字だけ。
+  // ^[...]*={0,2}$ の形の正規表現は初回実行が遅い(1MBで約10ms)ので、「範囲外の文字を探す」形で書く(約2ms)。
+  const eq = b64.indexOf('=');
+  const pad = eq < 0 ? '' : b64.slice(eq);
+  if (b64.length % 4 || (pad !== '' && pad !== '=' && pad !== '==') || /[^A-Za-z0-9+/=]/.test(b64)) return { error: ERR_BAD };
+  if ((b64.length / 4) * 3 - pad.length > MAX_IMAGE_BYTES) return { error: ERR_SIZE };
+  const head = atob(b64.slice(0, 4)); // 先頭3バイトだけデコードして JPEG(FF D8 FF)か確認
+  if (head.length < 3 || head.charCodeAt(0) !== 0xff || head.charCodeAt(1) !== 0xd8 || head.charCodeAt(2) !== 0xff) return { error: ERR_BAD };
+  return { base64: b64 };
+}
+
+// ---- /caption の入力検証 ----
+// 戻り値 { error } または { memo, kind, base64|null, salon:{name,area,tone,tags}, variant }
+export function validateCaptionBody(body) {
+  if (!isPlainObject(body)) return { error: ERR_BAD };
+  const str = (v, max) => (v === undefined || v === null ? '' : typeof v === 'string' && v.length <= max ? v.trim() : null);
+  const memo = str(body.memo, MAX_MEMO_LEN);
+  if (memo === null) return { error: '文字数が多すぎます' };
+  const kind = Number.isInteger(body.kind) && body.kind >= 0 && body.kind < CAPTION_KINDS.length ? body.kind : null;
+  if (kind === null) return { error: ERR_BAD };
+  let base64 = null;
+  if (body.dataUrl !== undefined && body.dataUrl !== null) {
+    if (typeof body.dataUrl !== 'string') return { error: ERR_BAD };
+    const r = validateJpegDataUrl(body.dataUrl);
+    if (r.error) return { error: r.error };
+    base64 = r.base64;
+  }
+  if (!memo && !base64) return { error: '写真かひとことを入れてください' };
+  const s = isPlainObject(body.salon) ? body.salon : {};
+  const salon = { name: str(s.name, MAX_SETTING_LEN), area: str(s.area, MAX_SETTING_LEN), tone: str(s.tone, MAX_SETTING_LEN), tags: str(s.tags, MAX_SETTING_LEN) };
+  if (Object.values(salon).some((v) => v === null)) return { error: '文字数が多すぎます' };
+  const variant = Number.isInteger(body.variant) && body.variant > 0 ? Math.min(body.variant, 9) : 0;
+  return { memo, kind, base64, salon, variant };
+}
+
+// Claude に渡す指示文。返答は JSON(caption, hashtags)に固定する(output_config.format)。
+export function buildCaptionPrompt({ memo, kind, base64, salon, variant }) {
+  const system = [
+    `あなたは${salon.name || 'トリミングサロン'}${salon.area ? `(${salon.area})` : ''}のInstagram担当です。オーナーに代わって、そのまま投稿できる文章を1件作ります。`,
+    `文章の雰囲気: ${salon.tone || 'やさしく、親しみやすい。絵文字は少しだけ'}`,
+    '決まり:',
+    '- 本文は日本語で120〜200字。お店の口調で、読んだ人が来店や予約をしたくなる一言を最後に入れる。',
+    '- 飼い主さんの個人名・住所・電話番号は書かない。写真に写っていない事実を作らない。',
+    '- 見出しや「本文:」などのラベル、前置きは付けない。本文だけを書く。',
+    `- hashtags は「${salon.tags || '#トリミング #トリミングサロン'}」をそのまま先頭に置き、内容に合うものを2〜4個足して、半角スペース区切りで1行にする。`,
+  ].join('\n');
+  const text = [
+    `投稿の型: ${CAPTION_KINDS[kind]}`,
+    `オーナーのひとこと: ${memo || '(なし。写真を見て書いてください)'}`,
+    base64 ? '添付の写真はこの投稿に使う写真です。写っている様子も文章に取り入れてください。' : '写真はありません。',
+    variant ? `これは${variant + 1}回目の作り直しです。前とは違う切り口・言い回しにしてください。` : '',
+  ].filter(Boolean).join('\n');
+  const content = [];
+  if (base64) content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } });
+  content.push({ type: 'text', text });
+  return {
+    model: CAPTION_MODEL,
+    max_tokens: CAPTION_MAX_TOKENS,
+    fallbacks: 'default',
+    system,
+    messages: [{ role: 'user', content }],
+    output_config: {
+      format: {
+        type: 'json_schema',
+        schema: {
+          type: 'object',
+          properties: { caption: { type: 'string' }, hashtags: { type: 'string' } },
+          required: ['caption', 'hashtags'],
+          additionalProperties: false,
+        },
+      },
+    },
+  };
+}
+
+// 1日の回数を数える。上限内なら true。
+function countCaption(now = Date.now()) {
+  const day = new Date(now).toISOString().slice(0, 10);
+  for (const k of captionCounts.keys()) if (k !== day) captionCounts.delete(k); // 昨日以前は捨てる
+  const n = (captionCounts.get(day) || 0) + 1;
+  if (n > CAPTION_DAILY_MAX) return false;
+  captionCounts.set(day, n);
+  return true;
 }
 
 // 現在の content に対してキーが存在するか。
@@ -396,5 +500,55 @@ export async function handleSave(request, env, template) {
     if (e instanceof GithubAuthError) return json(502, { error: ERR_GH_AUTH });
     console.error('POST /save failed', e);
     return json(500, { error: ERR_SAVE });
+  }
+}
+
+export async function handleCaption(request, env) {
+  if (!(await isAuthorized(request, env))) return json(401, { error: ERR_AUTH });
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json(400, { error: ERR_BAD });
+  }
+  const input = validateCaptionBody(body);
+  if (input.error) return json(400, { error: input.error });
+  if (!env.ANTHROPIC_API_KEY) return json(502, { error: ERR_CAPTION_SETUP });
+  if (!countCaption()) return json(429, { error: ERR_CAPTION_LIMIT });
+
+  try {
+    const res = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': env.ANTHROPIC_API_KEY,
+        'anthropic-version': ANTHROPIC_VERSION,
+        'anthropic-beta': ANTHROPIC_BETA,
+      },
+      body: JSON.stringify(buildCaptionPrompt(input)),
+    });
+    if (res.status === 429 || res.status === 529) return json(429, { error: ERR_CAPTION_BUSY });
+    if (res.status === 401 || res.status === 403) {
+      console.error('Anthropic API 認証エラー', res.status);
+      return json(502, { error: ERR_CAPTION_SETUP });
+    }
+    if (!res.ok) {
+      console.error('Anthropic API error', res.status, await res.text().catch(() => ''));
+      return json(500, { error: ERR_CAPTION_FAILED });
+    }
+    const msg = await res.json();
+    if (msg.stop_reason === 'refusal') {
+      console.error('caption refused', msg.stop_details);
+      return json(500, { error: ERR_CAPTION_FAILED });
+    }
+    const text = (msg.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+    const out = JSON.parse(text);
+    const caption = typeof out.caption === 'string' ? out.caption.trim() : '';
+    const hashtags = typeof out.hashtags === 'string' ? out.hashtags.trim() : '';
+    if (!caption) throw new Error('empty caption');
+    return json(200, { caption, hashtags });
+  } catch (e) {
+    console.error('POST /caption failed', e);
+    return json(500, { error: ERR_CAPTION_FAILED });
   }
 }

@@ -7,10 +7,13 @@ import assert from 'node:assert';
 import {
   handleLogin, handleGetContent, handleSave, createToken, verifyToken, passwordMatches,
   loginAttempts, RATE_LIMIT_MAX, renderPublic, gitBlobSha as workerBlobSha,
+  handleCaption, CAPTION_MODEL, CAPTION_DAILY_MAX, captionCounts,
 } from './src/lib.js';
 import { buildIndex, gitBlobSha } from './build-index.js';
 
 const ENV = { ADMIN_PASSWORD: 'correct-horse-battery', GITHUB_TOKEN: 'gh-token', SESSION_SECRET: 'session-secret' };
+const ANTHROPIC_KEY = 'sk-ant-test-key';
+const ENV_CAPTION = { ...ENV, ANTHROPIC_API_KEY: ANTHROPIC_KEY };
 const API = 'https://api.github.com/repos/rk25fix-crypto/ashiato-salon';
 const RAW = 'https://raw.githubusercontent.com/rk25fix-crypto/ashiato-salon';
 const BASE_TAG = '<base href="https://ashiato-salon.pages.dev/">';
@@ -585,6 +588,132 @@ async function main() {
     fakeGithub({ fail: { 'POST /git/blobs': [401] } });
     const res = await save({ type: 'image', key: 'hero', dataUrl: dataUrl(JPEG) });
     assert.strictEqual(res.status, 502);
+  });
+
+  // ---- 偽 Claude API ----
+  // status と返す本文を指定する。受け取ったリクエストは calls に溜める。Claude API 以外への通信は失敗させる。
+  function fakeAnthropic({ status = 200, body, text = '{"caption":"ふわふわに仕上がりました。ご予約お待ちしています。","hashtags":"#あしあとさろん #トリミング #トイプードル"}' } = {}) {
+    const a = { calls: [] };
+    globalThis.fetch = async (url, init = {}) => {
+      assert.strictEqual(String(url), 'https://api.anthropic.com/v1/messages', 'Claude API 以外への通信: ' + url);
+      a.calls.push({ headers: init.headers, body: JSON.parse(init.body) });
+      const payload = body !== undefined ? body : { stop_reason: 'end_turn', content: [{ type: 'text', text }] };
+      return new Response(typeof payload === 'string' ? payload : JSON.stringify(payload), { status });
+    };
+    return a;
+  }
+  const caption = async (body, env = ENV_CAPTION, headers) => handleCaption(req('POST', '/caption', body, headers ?? (await auth())), env);
+
+  console.log('POST /caption');
+  captionCounts.clear();
+
+  await check('未ログインは 401、Claude API を呼ばない', async () => {
+    const a = fakeAnthropic();
+    const res = await caption({ memo: 'モカちゃん', kind: 0 }, ENV_CAPTION, {});
+    assert.strictEqual(res.status, 401);
+    assert.deepStrictEqual(a.calls, []);
+  });
+
+  await check('メモも写真も無いと 400(案内文)、型が範囲外・本文が壊れていると 400', async () => {
+    const a = fakeAnthropic();
+    let res = await caption({ memo: '  ', kind: 0 });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual((await res.json()).error, '写真かひとことを入れてください');
+    res = await caption({ memo: 'モカちゃん', kind: 4 });
+    assert.strictEqual(res.status, 400);
+    res = await caption({ memo: 'モカちゃん', kind: '0' });
+    assert.strictEqual(res.status, 400);
+    res = await caption({ memo: 'あ'.repeat(301), kind: 0 });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual((await res.json()).error, '文字数が多すぎます');
+    res = await handleCaption(new Request('https://worker.example/caption', { method: 'POST', headers: await auth(), body: '{' }), ENV_CAPTION);
+    assert.strictEqual(res.status, 400);
+    assert.deepStrictEqual(a.calls, []);
+  });
+
+  await check('ANTHROPIC_API_KEY が未登録なら 502(管理者に連絡)、Claude API を呼ばない', async () => {
+    const a = fakeAnthropic();
+    const res = await caption({ memo: 'モカちゃん', kind: 0 }, ENV);
+    assert.strictEqual(res.status, 502);
+    assert.strictEqual((await res.json()).error, '文章づくりの準備ができていません。管理者に連絡してください');
+    assert.deepStrictEqual(a.calls, []);
+  });
+
+  await check('正常(メモのみ): API キーはヘッダだけ、JSON 固定で依頼し、caption と hashtags を返す', async () => {
+    const a = fakeAnthropic();
+    const res = await caption({ memo: 'トイプードルのモカちゃん、テディベアカット', kind: 1, salon: { name: 'あしあとさろん', area: '豊川市', tone: '明るく', tags: '#あしあとさろん' } });
+    const body = await res.json();
+    assert.strictEqual(res.status, 200, JSON.stringify(body));
+    assert.deepStrictEqual(body, { caption: 'ふわふわに仕上がりました。ご予約お待ちしています。', hashtags: '#あしあとさろん #トリミング #トイプードル' });
+    assert.strictEqual(a.calls.length, 1);
+    const { headers, body: reqBody } = a.calls[0];
+    assert.strictEqual(headers['x-api-key'], ANTHROPIC_KEY);
+    assert.strictEqual(headers['anthropic-version'], '2023-06-01');
+    assert.strictEqual(headers.Authorization, undefined, 'GitHub 用のヘッダを混ぜない');
+    assert.strictEqual(reqBody.model, CAPTION_MODEL);
+    assert.strictEqual(reqBody.fallbacks, 'default');
+    assert.strictEqual(reqBody.output_config.format.type, 'json_schema');
+    assert.deepStrictEqual(reqBody.output_config.format.schema.required, ['caption', 'hashtags']);
+    assert.strictEqual(reqBody.messages.length, 1);
+    assert.deepStrictEqual(reqBody.messages[0].content.map((c) => c.type), ['text']);
+    const text = reqBody.messages[0].content[0].text;
+    assert.ok(text.includes('ビフォーアフター') && text.includes('モカちゃん'));
+    assert.ok(reqBody.system.includes('あしあとさろん') && reqBody.system.includes('#あしあとさろん') && reqBody.system.includes('明るく'));
+    assert.ok(!JSON.stringify(body).includes(ANTHROPIC_KEY), 'API キーを画面に返さない');
+  });
+
+  await check('写真付き: JPEG の base64 を image ブロックで渡す。PNG や壊れた dataURL は 400', async () => {
+    let a = fakeAnthropic();
+    let res = await caption({ memo: '', kind: 0, dataUrl: dataUrl(JPEG) });
+    assert.strictEqual(res.status, 200);
+    const content = a.calls[0].body.messages[0].content;
+    assert.deepStrictEqual(content.map((c) => c.type), ['image', 'text']);
+    assert.deepStrictEqual(content[0].source, { type: 'base64', media_type: 'image/jpeg', data: JPEG.toString('base64') });
+    a = fakeAnthropic();
+    res = await caption({ memo: 'x', kind: 0, dataUrl: 'data:image/png;base64,' + Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString('base64') });
+    assert.strictEqual(res.status, 400);
+    res = await caption({ memo: 'x', kind: 0, dataUrl: 'data:image/jpeg;base64,' + 'A'.repeat(Math.ceil(MB / 3) * 4 + 4) });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual((await res.json()).error, '写真のサイズが大きすぎます');
+    assert.deepStrictEqual(a.calls, []);
+  });
+
+  await check('作り直し(variant)は指示文に「前とは違う」を入れる', async () => {
+    const a = fakeAnthropic();
+    await caption({ memo: 'x', kind: 2, variant: 1 });
+    assert.ok(a.calls[0].body.messages[0].content[0].text.includes('前とは違う'));
+  });
+
+  await check('Claude API が 429/529 → 429(混み合っています)、401 → 502(管理者)、500 → 500、断られた → 500', async () => {
+    for (const [st, want] of [[429, 429], [529, 429], [401, 502], [500, 500]]) {
+      fakeAnthropic({ status: st, body: { error: { message: 'x' } } });
+      const [res] = await quiet(() => caption({ memo: 'x', kind: 0 }));
+      assert.strictEqual(res.status, want, 'API ' + st);
+    }
+    fakeAnthropic({ body: { stop_reason: 'refusal', stop_details: { type: 'refusal' }, content: [] } });
+    const [res] = await quiet(() => caption({ memo: 'x', kind: 0 }));
+    assert.strictEqual(res.status, 500);
+    assert.strictEqual((await res.json()).error, '文章を作れませんでした。もう一度お試しください');
+  });
+
+  await check('返答が JSON でない・caption が空なら 500', async () => {
+    fakeAnthropic({ text: 'こんにちは' });
+    let [res] = await quiet(() => caption({ memo: 'x', kind: 0 }));
+    assert.strictEqual(res.status, 500);
+    fakeAnthropic({ text: '{"caption":"","hashtags":"#a"}' });
+    [res] = await quiet(() => caption({ memo: 'x', kind: 0 }));
+    assert.strictEqual(res.status, 500);
+  });
+
+  await check('1日の上限を超えたら 429、Claude API を呼ばない', async () => {
+    const a = fakeAnthropic();
+    captionCounts.clear();
+    captionCounts.set(new Date().toISOString().slice(0, 10), CAPTION_DAILY_MAX);
+    const res = await caption({ memo: 'x', kind: 0 });
+    assert.strictEqual(res.status, 429);
+    assert.strictEqual((await res.json()).error, '今日の上限に達しました。また明日お試しください');
+    assert.deepStrictEqual(a.calls, []);
+    captionCounts.clear();
   });
 
   console.log('build-index.js');
