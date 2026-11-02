@@ -7,3 +7,6 @@ out/
 .next/
 coverage/
 .DS_Store
+
+# Claude Code 司令塔の進捗ボード（セッションごとのメモ）
+.claude/BOARD.md
